@@ -74,60 +74,55 @@ function loadPlaywright() {
     await setSelect('#usersel', 'U401'); await settle(1100);
     ok((await page.evaluate(() => location.hash)) === '#/dashboard', 'supervisor lands on the dashboard');
 
-    step('Station execution with an out-of-tolerance reading');
+    step('Guided station: out-of-tolerance reading');
     const pick = await page.evaluate(() => {
       const u = DB.units.find(x => x.status === 'In Process' && !MES.unitHeld(x.serial) && MES.currentOp(x) && x.opIdx < MES.routing(x.itemId).length - 1 &&
         MES.planChars(MES.plan(x.planId), MES.currentOp(x).seq).some(c => c.type === 'measure' && MES.charState(x, MES.currentOp(x).seq, c).state === 'pending') &&
         !MES.planChars(MES.plan(x.planId), MES.currentOp(x).seq).some(c => c.type === 'serial' && MES.charState(x, MES.currentOp(x).seq, c).state !== 'done'));
       const op = MES.currentOp(u);
-      return { serial: u.serial, st: op.station, who: DB.people.find(p => p.role === 'Operator' && p.quals.includes(op.station)).id };
+      const m = MES.planChars(MES.plan(u.planId), op.seq).find(c => c.type === 'measure' && MES.charState(u, op.seq, c).state === 'pending');
+      return { serial: u.serial, st: op.station, seq: op.seq, mid: m.id, lsl: m.lsl, usl: m.usl, who: DB.people.find(p => p.role === 'Operator' && p.quals.includes(op.station)).id };
     });
     await setSelect('#usersel', pick.who); await settle(900);
     ok((await toast()).startsWith('Signed in as'), 'user switch via oj-select-single');
-    await go('station/' + pick.st + '/' + pick.serial);
-    const meas = await page.$$eval('oj-input-text[data-enter="record"]', n => n.map(x => ({ id: x.getAttribute('data-id') })));
-    ok(meas.length > 0, 'pending measurement inputs rendered');
-    const spec = await page.evaluate(([s, id]) => { const u = MES.unit(s); const c = MES.findChar(MES.plan(u.planId), id); return { lsl: c.lsl, usl: c.usl }; }, [pick.serial, meas[0].id]);
-    const bad = spec.usl + Math.max(1, (spec.usl - spec.lsl)) * 0.5;
-    await page.fill('oj-input-text[data-id="' + meas[0].id + '"] input', String(bad));
-    await settle(200);
-    const live = await page.evaluate(id => { const el = document.querySelector('oj-input-text[data-id="' + id + '"]'); return (el.messagesCustom || []).map(m => m.summary).join(','); }, meas[0].id);
+    await page.evaluate(() => { const el = document.getElementById('gsearch'); el.value = ''; });
+    await page.fill('#gsearch input', pick.serial); await page.press('#gsearch input', 'Enter'); await settle(1100);
+    ok((await page.evaluate(() => location.hash)) === '#/station/' + pick.st + '/' + pick.serial, 'scanning a serial opens it at the operator\'s station');
+    ok(await page.$('.mes-stepcard') !== null, 'one step card shows the next thing to do');
+    await page.click('li.mes-step[data-id="' + pick.mid + '"]'); await settle(1000);
+    ok(await page.evaluate(id => document.querySelector('li.mes-step.current') && document.querySelector('li.mes-step.current').getAttribute('data-id') === id, pick.mid), 'clicking a step makes it the current step');
+    const bad = pick.usl + Math.max(1, (pick.usl - pick.lsl)) * 0.5;
+    await page.fill('#stepInput input', String(bad)); await settle(250);
+    const live = await page.evaluate(() => (document.getElementById('stepInput').messagesCustom || []).map(m => m.summary).join(','));
     ok(/Out of tolerance/.test(live), 'live out-of-tolerance message while typing (' + live + ')');
-    await page.click('oj-button[data-act="record"][data-id="' + meas[0].id + '"]');
-    const t1 = await toast();
-    ok(/out of tolerance/.test(t1), 'out-of-tolerance toast: ' + t1);
-    const drId = await page.evaluate(([s, id]) => MES.latest(s, MES.currentOp(MES.unit(s)).seq, id).drId, [pick.serial, meas[0].id]);
+    await page.press('#stepInput input', 'Enter'); await settle(1100);
+    const lastMsg = await page.textContent('.mes-last').catch(() => '');
+    ok(/out of tolerance/.test(lastMsg), 'inline result explains the failure: ' + lastMsg.trim().slice(0, 90));
+    const drId = await page.evaluate(p0 => MES.latest(p0.serial, p0.seq, p0.mid).drId, pick);
     ok(!!drId, 'discrepancy auto-created');
 
-    step('MRB disposition through the e-signature dialog');
+    step('MRB disposition with decision cards');
     await setSelect('#usersel', 'U302'); await settle(900);
+    ok((await page.$$eval('.mes-work-item', n => n.map(x => x.textContent).join(' '))).includes(drId), 'the new DR is in the engineer\'s My Work');
     await go('dr/' + drId);
-    await page.evaluate(() => { document.querySelector('oj-select-single[label-hint="Disposition"]').value = 'Rework'; });
-    await page.fill('oj-text-area[label-hint="Root cause"] textarea', 'Gauge offset after tool change; re-zeroed and re-measured');
-    await settle(200);
-    await page.click('oj-button:has-text("Sign disposition")');
+    await page.click('button.mes-disp[data-v="Rework"]'); await settle(200);
+    ok(/Sign: Rework/.test(await page.textContent('#signDisp')), 'button names the chosen disposition');
+    await page.fill('oj-text-area[label-hint="Root cause (required)"] textarea', 'Gauge offset after tool change; re-zeroed and re-measured');
+    await page.keyboard.press('Tab'); await settle(200);
+    await page.click('#signDisp');
     await sign('0000');
     ok(/PIN does not match/.test(await page.textContent('#sigDialog')), 'wrong PIN rejected in dialog');
     await sign('1234');
-    ok(/dispositioned/.test(await toast()), 'disposition signed');
     ok(await page.evaluate(id => MES.dr(id).status, drId) === 'Rework', 'DR in rework');
 
-    step('Re-inspect, verify & close, sign off and complete');
+    step('Operator re-inspects from My Work and finishes the operation');
     await setSelect('#usersel', pick.who); await settle(900);
+    ok((await page.$$eval('.mes-work-item', n => n.map(x => x.textContent).join(' '))).includes(drId), 'rework shows in the operator\'s My Work');
     await go('station/' + pick.st + '/' + pick.serial);
-    const recordAll = async () => {
-      for (let k = 0; k < 10; k++) {
-        const ids = await page.$$eval('oj-input-text[data-enter="record"]', n => n.map(x => x.getAttribute('data-id')));
-        if (!ids.length) break;
-        const sp = await page.evaluate(([s, id]) => { const u = MES.unit(s); const c = MES.findChar(MES.plan(u.planId), id); return c.nominal; }, [pick.serial, ids[0]]);
-        await page.fill('oj-input-text[data-id="' + ids[0] + '"] input', String(sp));
-        await page.click('oj-button[data-act="record"][data-id="' + ids[0] + '"]');
-        await settle(700);
-      }
-    };
-    await recordAll();
+    await page.click('li.mes-step[data-id="' + pick.mid + '"]'); await settle(900);
+    const nominal = await page.evaluate(p0 => { const u = MES.unit(p0.serial); return MES.findChar(MES.plan(u.planId), p0.mid).nominal; }, pick);
+    await page.fill('#stepInput input', String(nominal)); await page.press('#stepInput input', 'Enter'); await settle(1100);
     ok(await page.evaluate(id => MES.dr(id).status, drId) === 'Pending Verification', 'passing re-inspection moves DR to verification');
-    for (let k = 0; k < 6; k++) { if (!(await clickEnabled('oj-button[data-act="pass"]'))) break; await settle(700); }
     await setSelect('#usersel', 'U302'); await settle(900);
     await go('dr/' + drId);
     await page.click('oj-button:has-text("Verify")');
@@ -135,19 +130,36 @@ function loadPlaywright() {
     ok(await page.evaluate(id => MES.dr(id).status, drId) === 'Closed', 'DR verified & closed');
     await setSelect('#usersel', pick.who); await settle(900);
     await go('station/' + pick.st + '/' + pick.serial);
-    for (let k = 0; k < 3; k++) {
-      if (!(await clickEnabled('oj-button[data-act="sign"]'))) break;
-      const signer = await page.evaluate(() => { const s = MES.eligibleSigners(require('appController').sig.role()); const perf = DB.sigs.slice(-3).map(x => x.userId); return (s.find(p => !perf.includes(p.id)) || s[0]).id; });
-      await page.evaluate(v => { document.getElementById('sigSigner').value = v; }, signer);
-      await sign('1234');
-      const err = await page.evaluate(() => { const d = document.getElementById('sigDialog'); return d.isOpen() ? require('appController').sig.error() : ''; });
-      if (err) { console.log('    sign error: ' + err); await page.evaluate(() => document.getElementById('sigDialog').close()); }
+    let completed = false;
+    for (let k = 0; k < 20 && !completed; k++) {
+      if (await page.$('#stepPass')) { await page.click('#stepPass'); await settle(900); continue; }
+      if (await page.$('.mes-stepcard.k-measure')) {
+        const cid = await page.getAttribute('li.mes-step.current', 'data-id');
+        const nom = await page.evaluate(([s0, id]) => { const u = MES.unit(s0); return MES.findChar(MES.plan(u.planId), id).nominal; }, [pick.serial, cid]);
+        await page.fill('#stepInput input', String(nom)); await page.press('#stepInput input', 'Enter'); await settle(1000); continue;
+      }
+      if (await page.$('#stepSign')) {
+        await page.click('#stepSign');
+        const signer = await page.evaluate(() => { const s1 = MES.eligibleSigners(require('appController').sig.role()); const perf = DB.sigs.slice(-3).map(x => x.userId); return (s1.find(p => !perf.includes(p.id)) || s1[0]).id; });
+        await page.evaluate(v => { document.getElementById('sigSigner').value = v; }, signer);
+        await sign('1234'); await settle(900); continue;
+      }
+      if (await page.$('#completeOp')) { await page.click('#completeOp'); await settle(900); continue; }
+      completed = true;
     }
-    const seqBefore = await page.evaluate(s => MES.currentOp(MES.unit(s)).seq, pick.serial);
-    await page.click('#completeOp');
-    await settle(900);
-    const seqAfter = await page.evaluate(s => { const u = MES.unit(s); return u.status === 'Complete' ? 'done' : MES.currentOp(u).seq; }, pick.serial);
-    ok(seqAfter !== seqBefore, 'operation completed (OP' + seqBefore + ' → ' + seqAfter + ')' + (seqAfter === seqBefore ? ' blockers: ' + JSON.stringify(await page.evaluate(s => { const u = MES.unit(s); return MES.opBlockers(u, MES.currentOp(u).seq).concat(MES.unitHeld(s) ? ['HELD'] : [], [u.ops[MES.currentOp(u).seq].status]); }, pick.serial)) : ''));
+    const seqAfter = await page.evaluate(s0 => { const u = MES.unit(s0); return u.status === 'Complete' ? 999 : MES.currentOp(u).seq; }, pick.serial);
+    ok(seqAfter > pick.seq, 'step card drove the operation to completion (OP' + pick.seq + ' → ' + (seqAfter === 999 ? 'released' : 'OP' + seqAfter) + ')');
+
+    step('Start from My Work starts the job');
+    const nextPick = await page.evaluate(() => { const w = require('services/work'); const o = DB.people.filter(x => x.role === 'Operator').find(x => w.items(x).some(i => i.group === 'start')); return o && o.id; });
+    if (nextPick) {
+      await setSelect('#usersel', nextPick); await settle(1000);
+      await go('mywork');
+      const target = await page.getAttribute('.mes-work-item oj-button[data-act="start"]', 'data-serial');
+      await page.click('.mes-work-item oj-button[data-act="start"]'); await settle(1200);
+      ok(await page.evaluate(s0 => { const u = MES.unit(s0); return u.ops[MES.currentOp(u).seq].status === 'Active'; }, target), 'My Work Start button started the operation');
+      ok(await page.$('.mes-stepcard') !== null && !(await page.$('#stepStart')), 'lands on the first step, not on another Start button');
+    }
 
     step('Quality plan authoring and release');
     await setSelect('#usersel', 'U302'); await settle(900);

@@ -35,7 +35,7 @@ define(['services/ui'], function (ui) {
       if (busy) return; // station occupied; it will surface once the running unit completes
       out.push({ group: 'start', urgent: true, tone: 'ok', icon: 'station', order: u.launchedAt,
         title: '<span class="mes-mono">' + E(u.serial) + '</span>', sub: where, meta: 'Material at line-side · std ' + op.stdMin + ' min',
-        action: { label: 'Start', href } });
+        action: { label: 'Start', act: 'start', href, data: { serial: u.serial, seq: op.seq } } });
     });
     DB.drs.filter(d => d.status === 'Rework' && d.serial).forEach(d => {
       const u = MES.unit(d.serial), op = u && MES.currentOp(u);

@@ -21,14 +21,25 @@
           <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">MRB disposition</h2></div>
             <div class="mes-card-bd mes-stack" style="gap:8px">
               <oj-bind-if test="[[notQE]]"><div class="mes-banner warn"><div class="tx">Only a Quality Engineer can disposition. The signature dialog lists eligible signers.</div></div></oj-bind-if>
+              <div class="oj-typography-body-sm"><b>1. What should happen to it?</b></div>
+              <div class="mes-disp-grid" role="radiogroup" aria-label="Disposition">
+                <oj-bind-for-each data="[[dispOptions]]">
+                  <template data-oj-as="o">
+                    <button type="button" :class="[[o.data.cls]]" data-act="pick-disp" :data-v="[[o.data.value]]" role="radio" :aria-checked="[[o.data.cls().indexOf(' on') > 0 ? 'true' : 'false']]">
+                      <span class="ic" data-bind="html: o.data.icon"></span>
+                      <span class="t"><oj-bind-text value="[[o.data.title]]"></oj-bind-text> <span class="tag"><oj-bind-text value="[[o.data.tag]]"></oj-bind-text></span></span>
+                      <span class="d"><oj-bind-text value="[[o.data.desc]]"></oj-bind-text></span>
+                    </button>
+                  </template>
+                </oj-bind-for-each>
+              </div>
+              <div class="oj-typography-body-sm" style="margin-top:6px"><b>2. Why did it happen?</b></div>
               <oj-form-layout max-columns="1">
-                <oj-select-single label-hint="Disposition" data="[[dispDP]]" value="{{f.disposition}}" required></oj-select-single>
-                <oj-text-area label-hint="Root cause" value="{{f.rootCause}}" rows="2" required placeholder="Why did this happen?"></oj-text-area>
-                <oj-text-area label-hint="Containment" value="{{f.containment}}" rows="2" placeholder="What else could be affected; what was checked"></oj-text-area>
-                <oj-text-area label-hint="Corrective action" value="{{f.correctiveAction}}" rows="2" placeholder="Permanent fix to prevent recurrence"></oj-text-area>
+                <oj-text-area label-hint="Root cause (required)" value="{{f.rootCause}}" rows="2" placeholder="e.g. Multi-spindle clutch slipping on position 4"></oj-text-area>
+                <oj-text-area label-hint="Containment (optional)" value="{{f.containment}}" rows="2" placeholder="What else could be affected; what was checked"></oj-text-area>
+                <oj-text-area label-hint="Corrective action (optional)" value="{{f.correctiveAction}}" rows="2" placeholder="Permanent fix to prevent recurrence"></oj-text-area>
               </oj-form-layout>
-              <div class="oj-typography-body-xs oj-text-color-secondary">Rework / Repair releases the hold so the station can re-inspect, then requires verification. Use As Is, Scrap and Return to Vendor close on signature.</div>
-              <div class="mes-row"><oj-button chroming="callToAction" on-oj-action="[[signDisposition]]">Sign disposition</oj-button><oj-button chroming="outlined" on-oj-action="[[cancelDr]]">Cancel DR</oj-button></div>
+              <div class="mes-row"><oj-button id="signDisp" chroming="callToAction" class="oj-button-lg" label="[[dispChosen]]" on-oj-action="[[signDisposition]]"></oj-button><oj-button chroming="borderless" on-oj-action="[[cancelDr]]">Cancel DR</oj-button></div>
             </div></section>
         </oj-bind-if>
         <oj-bind-if test="[[isRework]]">

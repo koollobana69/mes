@@ -41,7 +41,7 @@ To load JET from a different location (for example an internal CDN mirror of the
 
 ```bash
 npm test          # 346 headless engine checks, including a full 29-operation vehicle build
-npm run test:ui   # 43 browser checks against the real JET screens (needs Playwright + Chromium)
+npm run test:ui   # 49 browser checks against the real JET screens (needs Playwright + Chromium)
 ```
 
 `test:ui` starts its own server, then drives the UI: navigation, role-based menus and redirects, user switching, an out-of-tolerance reading
@@ -65,12 +65,25 @@ act on now, each with one action button:
 | Quality Engineer | + Dashboard, Plans, Holds, Genealogy, Audit | DRs awaiting MRB or verification, *Approved* sign-offs, their draft plans |
 | Supervisor | Everything | Work at their stations plus all of the above |
 
-For operators the station terminal is decluttered:
-- No "recently completed" list and no traveler link.
-- The long operation strip becomes a progress line.
-- Lot material collapses to a one-line note unless something is short.
-- Plan items already done are hidden behind "Show completed items".
-- Sign-offs they can't give read "Waiting for Quality Engineer" instead of showing a button.
+**Getting things done: the guided station.** The station shows one large card for the next step:
+- It works through the steps in order: start the operation, scan each component, answer checks, record readings, then sign.
+- The input is focused and a scanner's Enter submits, so a whole operation can be run from the scanner and keypad.
+- Readings show the target, the spec on a gauge, and "In spec" / "Out of tolerance" while you type.
+- After each step a one-line result says what happened (for example "✓ C2 135 µm recorded — in spec" or "✕ … DR-26-0013 opened, unit on hold"), and the card moves to the next step.
+- The last signature completes the operation and brings up the next unit; there is no separate Complete click.
+- The step list below shows progress; click any open step to do it out of order.
+- Steps waiting on someone else say who ("Waiting for Quality Technician — it is in Sam Ortiz's My Work").
+- "Report a problem" raises a discrepancy against the current step.
+
+**Other shortcuts:**
+- **Start** on My Work starts the job and opens the first step.
+- Scanning a serial into the search box opens that unit at your station.
+- Quality Engineers choose an MRB disposition from cards that explain the outcome ("Rework: fix it to spec at the station, then re-inspect…"); the sign button names the choice.
+
+Operators also get a decluttered station:
+- The station list shows only the stations they're qualified on.
+- There's no "recently completed" list or traveler link.
+- The operation strip is replaced by a progress line.
 
 | People | Role | Can do |
 | --- | --- | --- |

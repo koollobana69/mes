@@ -62,8 +62,19 @@ define(['knockout', 'services/ui'], function (ko, ui) {
 
     this.isOpen = d.status === 'Open'; this.isRework = d.status === 'Rework'; this.isPV = d.status === 'Pending Verification';
     this.notQE = MES.currentUser().role !== 'Quality Engineer';
-    this.dispDP = ui.optionsDP(MES.DISPOSITIONS.filter(x => x !== 'Return to Vendor' || d.partId));
     this.f = { disposition: ko.observable(null), rootCause: ko.observable(''), containment: ko.observable(''), correctiveAction: ko.observable(''), rework: ko.observable(''), note: ko.observable('') };
+    const DISP = {
+      'Rework': ['flag', 'Fix it to spec at the station, then re-inspect. The hold is released so the operator can work.', 'Needs verification'],
+      'Repair': ['flag', 'Restore function with an approved repair method, re-inspect, then verify.', 'Needs verification'],
+      'Use As Is': ['check', 'Accept the deviation (engineering concession). The reading is marked accepted by MRB.', 'Closes now'],
+      'Scrap': ['x', 'It cannot be saved. The unit or part is scrapped.', 'Closes now'],
+      'Return to Vendor': ['truck', 'Supplier defect. The part goes back to the supplier.', 'Closes now'],
+    };
+    this.dispOptions = MES.DISPOSITIONS.filter(x => x !== 'Return to Vendor' || d.partId).map(v => ({
+      value: v, title: v, desc: DISP[v][1], tag: DISP[v][2], icon: ui.icon(DISP[v][0]),
+      cls: ko.pureComputed(() => 'mes-disp' + (this.f.disposition() === v ? ' on' : '')),
+    }));
+    this.dispChosen = ko.pureComputed(() => this.f.disposition() ? 'Sign: ' + this.f.disposition() : 'Choose a disposition');
     this.reworkHint = ch && op ? 'Re-inspect ' + ch.code + ' ' + ch.name + ' at ' + op.station + '. A passing reading moves this DR to verification automatically.' : 'Perform the ' + String(d.disposition || '').toLowerCase() + ', then record completion.';
     this.reworkHref = op ? '#/station/' + op.station + '/' + u.serial : null;
 
@@ -82,6 +93,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     this.reworkDone = () => app.commit(MES.reworkDoneDR(d.id, this.f.rework(), DB.currentUser), 'Rework recorded; awaiting verification');
     this.verify = () => app.openSign({ title: 'Verify & close ' + d.id, role: 'Quality Engineer', meaning: 'Verified effective & closed', confirm: 'Verify & close', noteLabel: 'Verification note (evidence reviewed)' },
       (signer, pin, note) => { const r = MES.verifyCloseDR(d.id, note, signer, pin); if (r.ok) app.commit(r, d.id + ' closed'); return r; });
+    this.actions = { 'pick-disp': el => this.f.disposition(el.getAttribute('data-v')) };
     this.addNote = () => app.commit(MES.addDRNote(d.id, String(this.f.note() || '').trim(), DB.currentUser), 'Note added');
   };
 });

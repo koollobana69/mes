@@ -1,5 +1,5 @@
 /* Station terminal: dispatch queue + quality-plan-driven work panel for the selected unit. */
-define(['knockout', 'services/ui'], function (ko, ui) {
+define(['knockout', 'services/ui', 'ojs/ojcollapsible'], function (ko, ui) {
   'use strict';
   const E = ui.E;
 
@@ -72,13 +72,12 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     this.actions = {};
     if (!u) return;
 
-    /* ---------------- work panel for unit u ---------------- */
+    /* ---------------- work panel: guided "next step" flow for unit u ---------------- */
     const plan = MES.plan(u.planId), chars = MES.planChars(plan, op.seq), o = u.ops[op.seq];
-    const held = MES.unitHeld(u.serial), active = o.status === 'Active' && !held && qualified;
+    const held = MES.unitHeld(u.serial), canWork = o.status === 'Active' && !held && qualified;
     const isLast = u.opIdx === routing.length - 1;
     const gate = isLast ? ui.openDrs(u.serial) : [];
-    const states = chars.map(c => MES.charState(u, op.seq, c));
-    const doneN = states.filter(s => s.state === 'done' || s.state === 'accepted').length;
+    const serial = u.serial, seq = op.seq, ls = st.building + '-LS';
 
     this.serial = u.serial;
     this.eyebrow = lean ? MES.part(u.itemId).name : MES.part(u.itemId).name + ' · ' + u.jobId + ' · plan ' + u.planId;
@@ -86,8 +85,6 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     this.showOpbar = !lean;
     this.opPct = Math.round(u.opIdx / routing.length * 100);
     this.vinText = u.itemId === 'VEH-T1' ? 'VIN check digit ' + u.serial[8] + ' ' + (U.vinValid(u.serial) ? '✓ valid' : '✕ invalid') : '';
-    this.showStart = o.status === 'Pending' && !held;
-    this.startLabel = 'Start OP' + op.seq;
     this.travelerHref = '#/unit/' + u.serial;
     this.opPos = 'Operation ' + (routing.indexOf(op) + 1) + ' of ' + routing.length;
     this.opbar = routing.map(x => ({
@@ -95,175 +92,206 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       label: routing.length > 12 ? String(x.seq) : x.seq + ' ' + x.name,
       title: 'OP' + x.seq + ' ' + x.name + ' — ' + u.ops[x.seq].status + (u.ops[x.seq].end ? ' ' + U.fmtDT(u.ops[x.seq].end) : ''),
     }));
-
-    const holds = MES.activeHolds('Unit', u.serial);
-    const qualNames = DB.people.filter(p => p.quals.includes(stId)).map(p => p.name);
-    if (held) { this.bannerCls = 'mes-banner bad'; this.bannerHtml = ui.icon('lock') + '<div class="tx"><b>Quality hold — work is blocked.</b> ' + holds.map(h => E(h.id) + ': ' + E(h.reason) + (h.drId ? ' (' + ui.drLink(h.drId) + ')' : '')).join('; ') + '. A Quality Engineer must disposition the discrepancy before work continues.</div>'; }
-    else if (gate.length && o.status === 'Pending') { this.bannerCls = 'mes-banner warn'; this.bannerHtml = ui.icon('alert') + '<div class="tx"><b>Final release gate.</b> Open discrepancies must be closed before the final operation starts: ' + gate.map(d => ui.drLink(d.id) + ' (' + E(d.status) + ')').join(', ') + '.</div>'; }
-    else if (o.status === 'Pending') { this.bannerCls = 'mes-banner info'; this.bannerHtml = ui.icon('play') + '<div class="tx"><b>Queued.</b> Start the operation to record inspection data.' + (qualified ? '' : ' ' + E(cu.name) + ' is not qualified on ' + E(stId) + '; qualified: ' + E(qualNames.join(', ')) + '.') + '</div>'; }
-    else if (!qualified) { this.bannerCls = 'mes-banner warn'; this.bannerHtml = ui.icon('lock') + '<div class="tx"><b>View only.</b> ' + E(cu.name) + ' (' + E(cu.role) + ') is not qualified on ' + E(stId) + '. Switch user to record data: ' + E(qualNames.join(', ')) + '.</div>'; }
-    else { this.bannerCls = 'mes-banner ok'; this.bannerHtml = ui.icon('station') + '<div class="tx"><b>In process</b> since ' + U.fmtT(o.start) + ' (' + U.dur(MES.now() - o.start) + ') · operator ' + E(MES.userName(o.operator)) + ' · ' + doneN + ' of ' + chars.length + ' plan items complete</div>'; }
-    this.progress = chars.length ? Math.round(doneN / chars.length * 100) : 0;
-    this.showProgress = o.status === 'Active' && !held;
-    this.instrTitle = 'Work instructions · OP' + op.seq + ' ' + op.name + (op.equipment ? ' · ' + op.equipment : '');
     this.instr = op.instr;
+    this.instrTitle = 'Work instructions' + (op.equipment ? ' · ' + op.equipment : '');
 
-    /* rows */
-    const ls = st.building + '-LS';
-    const stShow = app.st('station:showDone', { v: !lean });
-    this.showDone = ko.observable(stShow.v);
-    this.showDone.subscribe(v => { stShow.v = v; });
-    const rowMap = {};
-    const drNote = s => s.r && s.r.drId ? ' · ' + ui.drLink(s.r.drId) + ' ' + (MES.dr(s.r.drId) ? ui.badge(MES.dr(s.r.drId).status) : '') : '';
-    const mkRow = c => {
-      const s = MES.charState(u, op.seq, c);
-      const row = { id: c.id, code: c.code, name: c.name, cls: 'mes-ci ' + s.state, stIcon: s.state === 'done' || s.state === 'accepted' ? ui.icon('check') : s.state === 'fail' ? ui.icon('x') : '',
-        sevHtml: c.sev !== 'Minor' && c.type !== 'signoff' ? ui.sev(c.sev) : '', kind: 'none', resultHtml: '', metaHtml: '', input: ko.observable(''), raw: ko.observable(''), disabled: !active, placeholder: '' };
+    /* ---- classify every plan item ---- */
+    const ordered = [].concat(
+      chars.filter(c => c.type === 'serial'), chars.filter(c => c.type === 'check' && c.phase !== 'end'),
+      chars.filter(c => c.type === 'measure' || c.type === 'calc'), chars.filter(c => c.type === 'check' && c.phase === 'end'),
+      chars.filter(c => c.type === 'signoff'));
+    const performers = () => chars.filter(x => x.type === 'signoff' && x.meaning === 'Performed').map(x => MES.sigFor(serial, seq, x.id)).filter(Boolean).map(sg => sg.userId);
+    const othersDone = () => chars.filter(x => x.type !== 'signoff' && x.required).every(x => ['done', 'accepted'].includes(MES.charState(u, seq, x).state));
+    const statusOf = c => {
+      const sc = MES.charState(u, seq, c);
+      if (sc.state === 'done' || sc.state === 'accepted') return { k: 'done', sc };
+      if (c.type === 'calc') return { k: 'auto', sc };
+      if (c.type === 'signoff') {
+        if (!othersDone()) return { k: 'locked', sc };
+        if (MES.canSign(cu, c.role) && !(c.meaning !== 'Performed' && performers().includes(cu.id))) return { k: o.status === 'Active' && !held ? 'todo' : 'blocked', sc };
+        return { k: 'waiting', sc, who: MES.eligibleSigners(c.role).filter(pp => !performers().includes(pp.id)).map(pp => pp.name) };
+      }
+      if (sc.state === 'fail') { const d = sc.dr; return d && d.status === 'Rework' ? { k: canWork ? 'redo' : 'blocked', sc } : { k: 'waiting', sc, dr: d }; }
+      return { k: canWork ? 'todo' : 'blocked', sc };
+    };
+    const info = ordered.map(c => ({ c, s: statusOf(c) }));
+    const actionable = info.filter(x => x.s.k === 'todo' || x.s.k === 'redo');
+    const focusSt = app.st('station:focus', {});
+    const fkey = serial + '|' + seq;
+    let cur = actionable.find(x => x.c.id === focusSt[fkey]) || actionable[0] || null;
+    const doneN = info.filter(x => x.s.k === 'done').length;
+    this.doneText = doneN + ' of ' + info.length + ' done';
+    this.progress = info.length ? Math.round(doneN / info.length * 100) : 0;
+
+    /* ---- the step list (compact, click to jump) ---- */
+    const ICON = { done: 'check', todo: '', redo: 'flag', waiting: 'lock', locked: 'lock', auto: 'calc', blocked: '' };
+    const valueOf = (c, sc) => {
+      if (!sc.r && !sc.sig) return '';
+      if (c.type === 'signoff') return E(sc.sig.name);
+      if (c.type === 'measure' || c.type === 'calc') return '<span class="mes-mono">' + U.num(sc.r.value, c.dec) + ' ' + E(c.unit) + '</span>';
+      return '<span class="mes-mono">' + E(sc.r.value) + '</span>';
+    };
+    const stateLabel = x => ({ done: x.s.sc.state === 'accepted' ? 'Accepted by MRB' : '', todo: '', redo: 'Re-inspect', waiting: x.c.type === 'signoff' ? 'Waiting for ' + x.c.role : 'Waiting on Quality' + (x.s.dr ? ' (' + x.s.dr.id + ')' : ''), locked: 'After all items', auto: 'Auto-calculated', blocked: '' })[x.s.k];
+    this.steps = info.map((x, i) => ({
+      id: x.c.id, n: i + 1, code: x.c.code, name: x.c.name, type: ui.typeBadge(x.c.type),
+      cls: 'mes-step s-' + x.s.k + (cur && cur.c.id === x.c.id ? ' current' : '') + (x.s.k === 'todo' || x.s.k === 'redo' ? ' clickable' : ''),
+      icon: ICON[x.s.k] ? ui.icon(ICON[x.s.k]) : String(i + 1), value: valueOf(x.c, x.s.sc), label: stateLabel(x),
+      act: x.s.k === 'todo' || x.s.k === 'redo' ? 'focus' : '',
+    }));
+
+    /* ---- the step card: exactly one thing to do ---- */
+    const holds = MES.activeHolds('Unit', serial);
+    const qualNames = DB.people.filter(pp => pp.quals.includes(stId)).map(pp => pp.name);
+    const blockers = MES.opBlockers(u, seq);
+    const card = this.card = { kind: 'none', title: '', sub: '', html: '', code: '', sev: '', hint: '', placeholder: '', unit: '', btn: '' };
+    if (held) Object.assign(card, { kind: 'held', title: 'On quality hold — set this unit aside', html: holds.map(h => E(h.reason) + (h.drId ? ' · ' + ui.drLink(h.drId) : '')).join('<br>') + '<div class="mes-card-note">Quality decides what happens next. When they approve rework it shows up in your My Work.</div>' });
+    else if (o.status === 'Pending' && gate.length) Object.assign(card, { kind: 'held', title: 'Waiting on open discrepancies', html: 'The final operation can start once these are closed: ' + gate.map(d => ui.drLink(d.id) + ' (' + E(d.status) + ')').join(', ') });
+    else if (o.status === 'Pending') Object.assign(card, qualified
+      ? { kind: 'start', title: 'Start OP' + seq + ' · ' + op.name, sub: 'Standard time ' + op.stdMin + ' min · ' + chars.length + ' plan items', btn: 'Start operation' }
+      : { kind: 'info', title: 'Queued for OP' + seq, html: E(cu.name) + ' is not qualified on ' + E(stId) + '. Qualified: ' + E(qualNames.join(', ')) + '.' });
+    else if (cur) {
+      const c = cur.c, redo = cur.s.k === 'redo';
+      Object.assign(card, { code: c.code, sev: c.sev !== 'Minor' && c.type !== 'signoff' ? ui.sev(c.sev) : '', redo, stepNo: 'Step ' + (info.indexOf(cur) + 1) + ' of ' + info.length + (redo ? ' · re-inspection after rework' : '') });
       if (c.type === 'serial') {
         const part = MES.part(c.partId);
-        row.metaHtml = '<span class="mes-mono">' + E(part.id) + '</span><span>' + E(part.name) + '</span>' + (part.pattern !== 'VIN' ? '<span>mask <span class="mes-mono">' + E(part.pattern) + '</span></span>' : '');
-        if (s.state === 'done') { row.resultHtml = '<span class="mes-res pass">' + E(s.r.value) + '</span> ' + ui.link('genealogy/' + s.r.value, 'Trace'); }
-        else {
-          row.kind = 'serial'; row.placeholder = 'Scan ' + part.id + ' serial';
-          if (active) {
-            const avail = DB.inv.filter(i => i.partId === c.partId && i.location === ls && i.status === 'Available' && !MES.invHeld(i)).slice(0, 3);
-            row.metaHtml += '<span>line-side: ' + (avail.length ? avail.map(i => '<a href="#" class="oj-link mes-mono" data-act="fill-serial" data-v="' + E(i.serial) + '" data-id="' + E(c.id) + '" title="Simulate scanning this label">' + E(i.serial) + '</a>').join(', ') : '<span class="oj-text-color-danger">none — request a move</span>') + '</span>';
-          }
-          const last = DB.attempts.filter(a => a.serial === u.serial && a.charId === c.id).pop();
-          if (last && !last.ok) row.metaHtml += '<div class="mes-validation"><span class="n"><b>Last scan rejected (' + E(last.scanned) + '):</b> ' + E(last.msg) + '</span>' + last.checks.map(k => '<span class="' + (k.ok ? 'y' : 'n') + '">' + (k.ok ? '✓' : '✕') + ' ' + E(k.label) + ' — ' + E(k.msg) + '</span>').join('') + '</div>';
-        }
+        const avail = DB.inv.filter(i => i.partId === c.partId && i.location === ls && i.status === 'Available' && !MES.invHeld(i)).slice(0, 4);
+        const last = DB.attempts.filter(a => a.serial === serial && a.charId === c.id).pop();
+        Object.assign(card, { kind: 'serial', title: 'Scan the ' + c.slot, sub: part.id + ' · ' + part.name, placeholder: 'Scan or type the ' + c.slot + ' serial', btn: 'Validate & install',
+          chips: avail.map(i => i.serial), noStock: !avail.length,
+          html: last && !last.ok ? '<div class="mes-validation"><span class="n"><b>Last scan rejected (' + E(last.scanned) + '):</b> ' + E(last.msg) + '</span></div>' : '' });
       } else if (c.type === 'check') {
-        row.metaHtml = '<span>' + E(c.cat) + '</span>' + (s.r ? '<span>' + E(MES.userName(s.r.by)) + ' ' + U.fmtT(s.r.at) + '</span>' : '') + (s.r && s.r.note ? '<span>“' + E(s.r.note) + '”</span>' : '') + drNote(s);
-        if (s.r) row.resultHtml = '<span class="mes-res ' + (s.r.result === 'PASS' ? 'pass' : 'fail') + '">' + E(s.r.result) + '</span>';
-        if (s.state !== 'done' && s.state !== 'accepted') row.kind = 'check';
-      } else if (c.type === 'measure' || c.type === 'calc') {
-        const hist = MES.results(u.serial, op.seq, c.id);
-        row.metaHtml = '<span>Spec <b class="mes-mono">' + E(MES.specText(c)) + '</b></span>' + (c.type === 'measure' ? '<span>nominal ' + U.num(c.nominal, c.dec) + '</span>' + (c.gauge ? '<span>' + E(c.gauge) + '</span>' : '') : '<span class="mes-formula">' + E(c.formula) + '</span>') +
-          (s.r ? '<span>' + E(MES.userName(s.r.by)) + ' ' + U.fmtT(s.r.at) + '</span>' : '') + (hist.length > 1 ? '<span title="' + E(hist.map(r => U.fmtT(r.at) + '  ' + r.value + '  ' + r.result).join('\n')) + '">' + hist.length + ' readings</span>' : '') + drNote(s);
-        if (s.r) row.resultHtml = '<span class="mes-res ' + (s.r.result === 'PASS' ? 'pass' : 'fail') + '">' + U.num(s.r.value, c.dec) + ' ' + E(c.unit) + '</span>' + ui.gauge(c, s.r.value);
-        if (c.type === 'measure' && s.state !== 'done' && s.state !== 'accepted') {
-          row.kind = 'measure'; row.placeholder = c.unit;
-          row.msgs = ko.pureComputed(() => {
-            const v = parseFloat(row.raw());
-            if (row.raw() === '' || isNaN(v)) return [];
-            return MES.inSpec(c, v) ? [{ severity: 'confirmation', summary: 'In spec', detail: 'Within ' + MES.specText(c) }]
-              : [{ severity: 'warning', summary: 'Out of tolerance', detail: 'Spec ' + MES.specText(c) + '. Recording opens a discrepancy.' }];
-          });
-        }
-        if (c.type === 'calc' && !s.r) row.resultHtml = '<span class="oj-typography-body-xs oj-text-color-secondary">Calculates when inputs are recorded</span>';
+        Object.assign(card, { kind: 'check', title: c.name, sub: c.phase === 'end' ? 'Station-end checklist' : 'Inspection', btn: 'Pass' });
+      } else if (c.type === 'measure') {
+        Object.assign(card, { kind: 'measure', title: c.name, sub: (c.gauge ? c.gauge + ' · ' : '') + 'Target ' + U.num(c.nominal, c.dec) + ' ' + c.unit, spec: MES.specText(c), unit: c.unit, placeholder: 'Reading in ' + c.unit, btn: 'Record' });
       } else if (c.type === 'signoff') {
-        row.metaHtml = '<span>Role: ' + E(c.role) + '</span><span>Meaning: ' + E(c.meaning) + '</span>' + (c.meaning !== 'Performed' ? '<span>Independent of performer</span>' : '');
-        if (s.state === 'done') row.resultHtml = ui.sigCard(s.sig);
-        else if (lean && !MES.canSign(cu, c.role)) { row.resultHtml = '<span class="mes-await">Waiting for ' + E(c.role) + '</span>'; }
-        else { row.kind = 'sign'; row.signLabel = 'Sign as ' + c.role; row.disabled = !(o.status === 'Active' && !held); }
+        const other = chars.filter(x => x.type !== 'signoff');
+        const willComplete = chars.filter(x => x.type === 'signoff' && x.id !== c.id && !MES.sigFor(serial, seq, x.id)).length === 0;
+        Object.assign(card, { kind: 'sign', title: c.name, sub: other.length + ' plan items recorded · sign as ' + c.role + ' (' + c.meaning + ')', btn: willComplete ? (isLast ? 'Sign & release ' + ui.itemShort[u.itemId] : 'Sign & complete OP' + seq) : 'Sign' });
       }
-      row.done = s.state === 'done' || s.state === 'accepted';
-      row.visible = ko.pureComputed(() => !row.done || this.showDone());
-      rowMap[c.id] = row;
-      return row;
-    };
-    const section = (title, list) => list.length ? { title, count: list.filter(c => ['done', 'accepted'].includes(MES.charState(u, op.seq, c).state)).length + ' / ' + list.length, rows: list.map(mkRow) } : null;
-    this.sections = [
-      section('Serialized components · validate & install', chars.filter(c => c.type === 'serial')),
-      section('In-process inspection', chars.filter(c => c.type === 'check' && c.phase !== 'end')),
-      section('Measurements & calculations', chars.filter(c => c.type === 'measure' || c.type === 'calc')),
-      section('Station-end checklist', chars.filter(c => c.type === 'check' && c.phase === 'end')),
-      section('Sign-off', chars.filter(c => c.type === 'signoff')),
-    ].filter(Boolean);
-    const doneCount = this.sections.reduce((n, sec) => n + sec.rows.filter(r => r.done).length, 0);
-    this.doneCount = doneCount;
-    this.toggleDoneLabel = ko.pureComputed(() => this.showDone() ? 'Hide ' + doneCount + ' completed item' + (doneCount === 1 ? '' : 's') : 'Show ' + doneCount + ' completed item' + (doneCount === 1 ? '' : 's'));
-    this.toggleDone = () => this.showDone(!this.showDone());
-    this.sections.forEach(sec => { sec.allDone = sec.rows.every(r => r.done); sec.visible = ko.pureComputed(() => !sec.allDone || this.showDone()); });
+      focusSt[fkey] = c.id;
+    } else if (!qualified && o.status === 'Active') Object.assign(card, { kind: 'info', title: 'View only', html: E(cu.name) + ' (' + E(cu.role) + ') is not qualified on ' + E(stId) + '. Qualified: ' + E(qualNames.join(', ')) + '.' });
+    else if (!blockers.length && o.status === 'Active') Object.assign(card, { kind: 'complete', title: 'All steps done', sub: 'Completing backflushes lot material' + (op.test ? ', creates the ' + op.test + ' record' : '') + ' and moves the unit on.', btn: isLast ? 'Complete & release ' + ui.itemShort[u.itemId] : 'Complete OP' + seq });
+    else {
+      const w = info.filter(x => x.s.k === 'waiting');
+      const sig = w.find(x => x.c.type === 'signoff'), dq = w.find(x => x.c.type !== 'signoff');
+      Object.assign(card, { kind: 'info', title: 'Nothing more for you on this unit', html: (sig ? 'Waiting for ' + E(sig.c.role) + ' sign-off (' + E(sig.c.name) + ') — it is in the My Work of ' + E((sig.s.who || []).join(', ')) + '.' : '') + (dq ? (sig ? '<br>' : '') + 'Waiting on Quality for ' + E(dq.c.code + ' ' + dq.c.name) + (dq.s.dr ? ' (' + ui.drLink(dq.s.dr.id) + ')' : '') + '.' : '') });
+    }
+    ['held', 'start', 'serial', 'check', 'measure', 'sign', 'complete', 'info'].forEach(k => { card['is_' + k] = card.kind === k; });
+    card.chips = card.chips || [];
+    card.hasHtml = !!card.html;
 
-    const lots = (DB.boms[u.itemId] || []).filter(b => b.op === op.seq && MES.part(b.partId).tracking !== 'Serial');
-    this.lotsTable = ui.table([
-      { h: 'Part', v: b => '<span class="mes-mono">' + E(b.partId) + '</span> ' + E(MES.part(b.partId).name) },
-      { h: 'Qty / unit', num: 1, v: b => b.qty + ' ' + E(MES.part(b.partId).uom) },
-      { h: 'Line-side (' + ls + ')', v: b => { const l = MES.lotAvailable(b.partId, ls); const q = l.reduce((s2, i) => s2 + i.qty, 0); return (q >= b.qty ? ui.badge('Available', U.num(q, 1) + ' ' + MES.part(b.partId).uom) : ui.badge('Short', U.num(q, 1) + ' ' + MES.part(b.partId).uom)) + ' <span class="oj-typography-body-xs oj-text-color-secondary">' + E(l.map(i => i.lot).join(', ')) + '</span>'; } },
-    ], lots);
+    // input + live tolerance feedback for the step card
+    this.stepInput = ko.observable('');
+    this.stepRaw = ko.observable('');
+    const curChar = cur && cur.c;
+    this.stepMsgs = ko.pureComputed(() => {
+      if (!curChar || curChar.type !== 'measure') return [];
+      const v = parseFloat(this.stepRaw());
+      if (this.stepRaw() === '' || isNaN(v)) return [];
+      return MES.inSpec(curChar, v) ? [{ severity: 'confirmation', summary: 'In spec', detail: 'Within ' + MES.specText(curChar) }]
+        : [{ severity: 'warning', summary: 'Out of tolerance', detail: 'Recording opens a discrepancy' + (curChar.sev !== 'Minor' ? ' and puts the unit on hold.' : '.') }];
+    });
+    this.stepGauge = ko.pureComputed(() => { if (!curChar || curChar.type !== 'measure') return ''; const v = parseFloat(this.stepRaw()); return isNaN(v) ? ui.gauge(curChar, curChar.nominal).replace('mes-gauge-pt', 'mes-gauge-pt ghost') : ui.gauge(curChar, v); });
+
+    // last result, shown inline instead of a pile of toasts
+    const lastSt = app.st('station:last', {});
+    const last = lastSt[fkey];
+    this.lastMsg = last ? last.msg : ''; this.lastCls = last ? 'mes-last ' + last.tone : 'mes-last';
+    delete lastSt[fkey];
+    const say = (msg, tone) => { lastSt[fkey] = { msg, tone: tone || 'ok' }; };
+
+    // material
+    const lots = (DB.boms[u.itemId] || []).filter(b => b.op === seq && MES.part(b.partId).tracking !== 'Serial');
     const lotShort = lots.filter(b => MES.lotAvailable(b.partId, ls).reduce((q, i) => q + i.qty, 0) + 1e-9 < b.qty);
-    this.hasLots = lots.length > 0 && (!lean || lotShort.length > 0);
-    this.lotsOkText = lots.length && lean && !lotShort.length ? 'Lot material at line-side: ' + lots.map(b => b.partId).join(', ') + ' — backflushed on completion.' : '';
+    this.materialHtml = !lots.length ? '' : lotShort.length
+      ? '<span class="oj-text-color-danger"><b>Short at line-side:</b> ' + lotShort.map(b => E(b.partId + ' ' + MES.part(b.partId).name)).join(', ') + ' — ask a material handler.</span>'
+      : 'Lot material OK at line-side: ' + lots.map(b => E(b.partId) + ' ×' + b.qty).join(', ') + '. Backflushed on completion.';
 
-    const blockers = active ? MES.opBlockers(u, op.seq) : [];
-    this.showComplete = active;
-    this.completeReady = !blockers.length;
-    this.completeText = blockers.length ? (lean ? blockers.length + ' item' + (blockers.length === 1 ? '' : 's') + ' to go: ' + blockers.map(b => b.split(' ')[0]).join(', ') : blockers.length + ' item(s) outstanding: ' + blockers.slice(0, 4).join(' · ') + (blockers.length > 4 ? ' …' : ''))
-      : 'All quality-plan items are satisfied. Completing backflushes lot material' + (op.test ? ', creates the ' + op.test + ' record' : '') + ' and moves the unit to the next operation.';
-    this.completeLabel = isLast ? 'Complete & release ' + ui.itemShort[u.itemId] : 'Complete OP' + op.seq;
+    setTimeout(() => { const el = document.getElementById('stepInput'); if (el && el.focus) el.focus(); }, 350);
 
-    /* dialogs */
+    /* ---- dialogs ---- */
     this.failNote = ko.observable(''); this.failTitle = ko.observable(''); this.failInfo = ko.observable('');
     this.dr = { sev: ko.observable('Minor'), cat: ko.observable('Workmanship'), seq: ko.observable(op.seq), charId: ko.observable('none'), title: ko.observable(''), desc: ko.observable('') };
     this.sevDP = ui.optionsDP(['Minor', 'Major', 'Critical']);
     this.catDP = ui.optionsDP(['Workmanship', 'Cosmetic', 'Dimensional', 'Torque', 'Leak', 'Electrical', 'Wrong Part', 'Missing Part', 'Damage', 'Supplier', 'Documentation']);
     this.opDP = ui.optionsDP(routing.map(x => ({ value: x.seq, label: 'OP' + x.seq + ' ' + x.name })));
     this.charDP = ui.optionsDP([{ value: 'none', label: '— none —' }].concat(chars.filter(c => c.type !== 'signoff').map(c => ({ value: c.id, label: c.code + ' ' + c.name }))));
-    let failCtx = null;
 
-    const serial = u.serial, seq = op.seq;
-    this.startOp = () => { const r = MES.startOp(serial, seq, DB.currentUser); app.commit(r, r.ok ? 'OP' + seq + ' started on ' + serial : ''); };
-    this.completeOp = () => {
-      const r = MES.completeOp(serial, seq, DB.currentUser);
-      if (!r.ok) return app.commit(r);
+    /* ---- actions ---- */
+    const afterComplete = (r, who) => {
       MES.save();
-      app.toast(r.final ? serial + ' released — routing complete.' : 'OP' + seq + ' complete. ' + serial + ' moved to OP' + MES.currentOp(u).seq + '.');
+      const nx = MES.currentOp(u);
+      app.toast(r.final ? serial + ' released — routing complete.' : 'OP' + seq + ' complete · ' + serial + ' moved to OP' + nx.seq + ' (' + nx.station + ')');
       if (location.hash === '#/station/' + stId) app.refresh(); else app.go('station/' + stId);
     };
-    this.openLogDr = () => { this.dr.title(''); this.dr.desc(''); this.dr.sev('Minor'); this.dr.charId('none'); document.getElementById('logDrDialog').open(); };
+    const holdNote = () => MES.unitHeld(serial) ? ' The unit is on quality hold until Quality decides.' : ' You can carry on with the other steps.';
+    this.startOp = () => { const r = MES.startOp(serial, seq, DB.currentUser); if (!r.ok) return app.commit(r); say('Started OP' + seq + '. Work through the steps below.'); app.refresh(); };
+    this.completeOp = () => { const r = MES.completeOp(serial, seq, DB.currentUser); if (!r.ok) return app.commit(r); afterComplete(r); };
+    this.submitStep = () => {
+      if (!curChar) return;
+      const el = document.getElementById('stepInput');
+      const v = String((el && el.rawValue) || this.stepInput() || '').trim();
+      if (!v) return app.toast(curChar.type === 'serial' ? 'Scan or type the serial first.' : 'Enter the reading first.', 'warn');
+      if (curChar.type === 'serial') {
+        const r = MES.validateSerial(serial, seq, curChar.id, v, DB.currentUser);
+        MES.save();
+        say(r.ok ? '✓ ' + curChar.slot + ' ' + v.toUpperCase() + ' validated and installed.' : '✕ ' + r.msg, r.ok ? 'ok' : 'bad');
+        return app.refresh();
+      }
+      const r = MES.recordMeasure(serial, seq, curChar.id, v, DB.currentUser);
+      if (!r.ok) return app.commit(r);
+      const fails = [r.result].concat(r.calcs || []).filter(x => x.result === 'FAIL');
+      const calcTxt = (r.calcs || []).length ? ' · ' + r.calcs.map(c => c.code + ' = ' + c.value + ' ' + c.unit).join(', ') : '';
+      if (fails.length) { const d = MES.dr(fails[0].drId); say('✕ ' + fails.map(f => f.code + ' ' + f.value + ' ' + f.unit + ' is out of tolerance').join('; ') + (d ? ' — ' + d.id + ' opened.' : '.') + holdNote(), 'bad'); }
+      else say('✓ ' + r.result.code + ' ' + r.result.value + ' ' + r.result.unit + ' recorded — in spec' + calcTxt, 'ok');
+      app.refresh();
+    };
+    this.passStep = () => { const r = MES.recordCheck(serial, seq, curChar.id, 'PASS', '', DB.currentUser); if (!r.ok) return app.commit(r); say('✓ ' + curChar.code + ' passed'); app.refresh(); };
+    this.failStep = () => {
+      this.failNote(''); this.failTitle(curChar.code + ' ' + curChar.name);
+      this.failInfo('A discrepancy (' + curChar.sev + ', ' + curChar.cat + ') opens automatically' + (curChar.sev !== 'Minor' ? ' and the unit goes on quality hold.' : '. You can continue with the other steps.'));
+      document.getElementById('failDialog').open();
+    };
+    this.closeFail = () => document.getElementById('failDialog').close();
+    this.submitFail = () => {
+      const r = MES.recordCheck(serial, seq, curChar.id, 'FAIL', this.failNote(), DB.currentUser);
+      if (!r.ok) return app.toast(r.msg, 'bad');
+      document.getElementById('failDialog').close();
+      say('✕ ' + curChar.code + ' failed — ' + r.result.drId + ' opened.' + holdNote(), 'bad');
+      app.refresh();
+    };
+    this.signStep = () => {
+      const c = curChar;
+      const others = chars.filter(x => x.type !== 'signoff');
+      const summary = ui.kv([['Record', '<span class="mes-mono">' + E(serial) + '</span>'], ['Operation', 'OP' + seq + ' ' + E(op.name) + ' @ ' + E(op.station)],
+        ['Plan items', others.length + ' recorded (' + others.filter(x => MES.charState(u, seq, x).state === 'done').length + ' pass, ' + others.filter(x => MES.charState(u, seq, x).state === 'accepted').length + ' accepted by MRB)'], ['Sign-off', E(c.name)]]);
+      app.openSign({ title: card.btn, summary, role: c.role, meaning: c.meaning, confirm: card.btn },
+        (signer, pin) => {
+          const r = MES.signOp(serial, seq, c.id, signer, pin);
+          if (!r.ok) return r;
+          // last signature closes the operation: no separate "Complete" click
+          if (!MES.opBlockers(u, seq).length) {
+            const cr = MES.completeOp(serial, seq, signer);
+            if (cr.ok) { setTimeout(() => afterComplete(cr), 0); return r; }
+            say('Signed. ' + cr.msg, 'bad');
+          } else say('✓ Signed by ' + MES.userName(signer) + '.');
+          setTimeout(() => app.refresh(), 0);
+          return r;
+        });
+    };
+    this.openLogDr = () => { this.dr.title(''); this.dr.desc(''); this.dr.sev('Minor'); this.dr.charId(curChar && curChar.type !== 'signoff' ? curChar.id : 'none'); document.getElementById('logDrDialog').open(); };
     this.closeLogDr = () => document.getElementById('logDrDialog').close();
     this.submitLogDr = () => {
       if (!String(this.dr.title() || '').trim()) return app.toast('Enter a short title for the discrepancy.', 'bad');
       const r = MES.createDR({ by: DB.currentUser, serial, itemId: u.itemId, seq: Number(this.dr.seq()), charId: this.dr.charId() && this.dr.charId() !== 'none' ? this.dr.charId() : null, source: 'Manual', severity: this.dr.sev(), category: this.dr.cat(), title: this.dr.title(), description: this.dr.desc() });
       document.getElementById('logDrDialog').close();
-      app.commit(r, r.ok ? r.dr.id + ' opened' + (r.dr.holdId ? ' · unit on hold' : '') : '', 'warn');
+      if (r.ok) say('⚑ ' + r.dr.id + ' opened.' + (r.dr.holdId ? ' The unit is on quality hold.' : ''), 'warn');
+      app.commit(r);
     };
-    this.closeFail = () => document.getElementById('failDialog').close();
-    this.submitFail = () => {
-      const r = MES.recordCheck(serial, seq, failCtx.id, 'FAIL', this.failNote(), DB.currentUser);
-      if (!r.ok) return app.toast(r.msg, 'bad');
-      document.getElementById('failDialog').close();
-      app.commit(r, failCtx.code + ' failed — ' + r.result.drId + ' opened', 'bad');
-    };
-
     this.actions = {
-      'validate': el => {
-        const row = rowMap[el.getAttribute('data-id')];
-        const inp = document.getElementById('in-' + row.id);
-        const v = (inp && (inp.rawValue || inp.value)) || row.input();
-        const r = MES.validateSerial(serial, seq, row.id, v, DB.currentUser);
-        if (!r.ok) { MES.save(); app.toast(r.msg, 'bad'); app.refresh(); return; }
-        app.commit(r, r.msg);
-      },
-      'fill-serial': el => { const row = rowMap[el.getAttribute('data-id')]; row.input(el.getAttribute('data-v')); },
-      'record': el => {
-        const row = rowMap[el.getAttribute('data-id')];
-        const inp = document.getElementById('in-' + row.id);
-        const v = (inp && inp.rawValue) || row.input();
-        const r = MES.recordMeasure(serial, seq, row.id, v, DB.currentUser);
-        if (!r.ok) return app.commit(r);
-        const fails = [r.result].concat(r.calcs || []).filter(x => x.result === 'FAIL');
-        if (fails.length) {
-          const d = MES.dr(fails[0].drId);
-          app.commit(r, fails.map(f => f.code + ' ' + f.value + ' out of tolerance').join('; ') + (d ? ' — ' + d.id + ' opened' + (MES.unitHeld(serial) ? ', unit placed on hold' : '') : ''), 'bad');
-        } else app.commit(r, r.result.code + ' = ' + r.result.value + ' ' + r.result.unit + ' in spec' + (r.calcs && r.calcs.length ? ' · ' + r.calcs.map(c => c.code + ' = ' + c.value).join(', ') : ''));
-      },
-      'pass': el => { const r = MES.recordCheck(serial, seq, el.getAttribute('data-id'), 'PASS', '', DB.currentUser); app.commit(r, r.ok ? r.result.code + ' passed' : ''); },
-      'fail': el => {
-        const c = chars.find(x => x.id === el.getAttribute('data-id'));
-        failCtx = c; this.failNote(''); this.failTitle(c.code + ' ' + c.name);
-        this.failInfo('A discrepancy (' + c.sev + ', ' + c.cat + ') opens automatically' + (c.sev !== 'Minor' ? ' and the unit is placed on quality hold.' : '.'));
-        document.getElementById('failDialog').open();
-      },
-      'sign': el => {
-        const c = chars.find(x => x.id === el.getAttribute('data-id'));
-        const others = chars.filter(x => x.type !== 'signoff');
-        const summary = ui.kv([['Record', '<span class="mes-mono">' + E(serial) + '</span>'], ['Operation', 'OP' + seq + ' ' + E(op.name) + ' @ ' + E(op.station)],
-          ['Plan items', others.length + ' recorded (' + others.filter(x => MES.charState(u, seq, x).state === 'done').length + ' pass, ' + others.filter(x => MES.charState(u, seq, x).state === 'accepted').length + ' accepted by MRB)'], ['Sign-off', E(c.name)]]);
-        app.openSign({ title: 'Sign OP' + seq, summary, role: c.role, meaning: c.meaning, confirm: 'Sign as ' + c.meaning },
-          (signer, pin) => { const r = MES.signOp(serial, seq, c.id, signer, pin); if (r.ok) app.commit(r, 'Signed: ' + c.name + ' by ' + MES.userName(signer)); return r; });
-      },
+      focus: el => { focusSt[fkey] = el.getAttribute('data-id'); app.refresh(); },
+      'fill-serial': el => { this.stepInput(el.getAttribute('data-v')); const i = document.getElementById('stepInput'); if (i) i.focus(); },
+      submit: () => this.submitStep(),
     };
   };
 });

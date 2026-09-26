@@ -90,7 +90,13 @@ define([
 
       // ---- search
       this.searchText = ko.observable('');
-      this.searchKey = (event) => { if (event.key === 'Enter') this.search(event.target.value || this.searchText()); };
+      this.searchPlaceholder = ko.pureComputed(() => ['Operator', 'Quality Technician'].includes(this.user().role) ? 'Scan a unit serial or VIN to open it at your station' : 'Find VIN, serial, lot, DR or job');
+      this.searchKey = (event) => {
+        if (event.key !== 'Enter') return;
+        const el = document.getElementById('gsearch');
+        this.search((el && el.rawValue) || this.searchText());
+        this.searchText('');   // ready for the next scan
+      };
 
       this.sigIcon = ui.icon('sig');
       this._initSignature();
@@ -193,7 +199,13 @@ define([
     search(q) {
       q = String(q || '').trim().toUpperCase();
       if (!q) return;
-      if (MES.unit(q)) return this.go('unit/' + q);
+      const su = MES.unit(q);
+      if (su) {
+        // a scanned unit opens at your station when you can work on it; otherwise its record
+        const op = MES.currentOp(su);
+        if (op && su.status !== 'Complete' && MES.currentUser().quals.includes(op.station)) return this.go('station/' + op.station + '/' + su.serial);
+        return this.go('unit/' + q);
+      }
       if (MES.dr(q)) return this.go('dr/' + q);
       if (MES.job(q)) return this.go('job/' + q);
       if (MES.plan(q)) return this.go('plan/' + q);

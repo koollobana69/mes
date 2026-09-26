@@ -63,10 +63,10 @@
         </oj-bind-if>
       </div>
 
-      <section class="mes-card">
+      <section class="mes-card mes-work-panel">
         <oj-bind-if test="[[!hasUnit]]"><div class="mes-empty"><oj-bind-text value="[[emptyText]]"></oj-bind-text></div></oj-bind-if>
         <oj-bind-if test="[[hasUnit]]">
-          <div class="mes-card-bd mes-stack mes-unit-top">
+          <div class="mes-card-bd mes-stack mes-unit-top" style="gap:12px">
             <div class="mes-unit-hd">
               <div>
                 <div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div>
@@ -74,88 +74,89 @@
                 <div class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[vinText]]"></oj-bind-text></div>
               </div>
               <div class="mes-acts">
-                <oj-bind-if test="[[showStart]]"><oj-button chroming="callToAction" on-oj-action="[[startOp]]"><oj-bind-text value="[[startLabel]]"></oj-bind-text></oj-button></oj-bind-if>
-                <oj-button chroming="outlined" on-oj-action="[[openLogDr]]">Log discrepancy</oj-button>
-                <oj-bind-if test="[[showTraveler]]"><a class="oj-link" :href="[[travelerHref]]" style="align-self:center">Traveler</a></oj-bind-if>
+                <oj-button chroming="borderless" on-oj-action="[[openLogDr]]">Report a problem</oj-button>
+                <oj-bind-if test="[[showTraveler]]"><a class="oj-link" :href="[[travelerHref]]">Traveler</a></oj-bind-if>
               </div>
             </div>
             <oj-bind-if test="[[showOpbar]]">
-            <div>
-              <div class="oj-typography-body-xs oj-text-color-secondary" style="margin-bottom:4px"><oj-bind-text value="[[opPos]]"></oj-bind-text></div>
               <div class="mes-opbar">
                 <oj-bind-for-each data="[[opbar]]"><template data-oj-as="b"><div :class="[[b.data.cls]]" :title="[[b.data.title]]"><oj-bind-text value="[[b.data.label]]"></oj-bind-text></div></template></oj-bind-for-each>
               </div>
-            </div>
             </oj-bind-if>
-            <oj-bind-if test="[[!showOpbar]]">
-              <div class="mes-oppos"><span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[opPos]]"></oj-bind-text></span><div class="mes-progress"><span class="done" :style.width="[[opPct + '%']]"></span></div></div>
-            </oj-bind-if>
-            <div :class="[[bannerCls]]"><span style="display:contents" data-bind="html: bannerHtml"></span>
-              <oj-bind-if test="[[showProgress]]"><oj-progress-bar value="[[progress]]" max="100" style="width:160px"></oj-progress-bar></oj-bind-if>
-            </div>
-            <div>
-              <div class="mes-sec-title" style="padding-left:0"><oj-bind-text value="[[instrTitle]]"></oj-bind-text></div>
-              <ol class="mes-instr"><oj-bind-for-each data="[[instr]]"><template data-oj-as="i"><li><oj-bind-text value="[[i.data]]"></oj-bind-text></li></template></oj-bind-for-each></ol>
-            </div>
+            <div class="mes-oppos"><span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[opPos]]"></oj-bind-text> · <oj-bind-text value="[[doneText]]"></oj-bind-text></span><div class="mes-progress"><span class="done" :style.width="[[progress + '%']]"></span></div></div>
           </div>
 
-          <oj-bind-if test="[[lotsOkText]]"><div class="mes-lots-ok"><oj-bind-text value="[[lotsOkText]]"></oj-bind-text></div></oj-bind-if>
-          <oj-bind-if test="[[doneCount > 0]]"><div class="mes-done-toggle"><oj-button chroming="borderless" class="oj-button-sm" on-oj-action="[[toggleDone]]"><oj-bind-text value="[[toggleDoneLabel]]"></oj-bind-text></oj-button></div></oj-bind-if>
-          <oj-bind-if test="[[hasLots]]">
-            <div class="mes-sec-title">Lot-controlled material · backflushed on completion</div>
-            <div style="padding:0 16px 8px">
-              <oj-table class="mes-table" aria-label="Lot material" data="[[lotsTable.dp]]" columns="[[lotsTable.columns]]">
-                <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template>
-              </oj-table>
-            </div>
-          </oj-bind-if>
+          <oj-bind-if test="[[lastMsg]]"><div :class="[[lastCls]]" role="status"><oj-bind-text value="[[lastMsg]]"></oj-bind-text></div></oj-bind-if>
 
-          <oj-bind-for-each data="[[sections]]">
-            <template data-oj-as="sec">
-              <oj-bind-if test="[[sec.data.visible()]]">
-              <div class="mes-sec-title"><oj-bind-text value="[[sec.data.title]]"></oj-bind-text><span class="cnt"><oj-bind-text value="[[sec.data.count]]"></oj-bind-text></span></div>
-              <oj-bind-for-each data="[[sec.data.rows]]">
-                <template data-oj-as="r">
-                  <oj-bind-if test="[[r.data.visible()]]">
-                  <div :class="[[r.data.cls]]">
-                    <div class="code"><span class="st" data-bind="html: r.data.stIcon"></span><oj-bind-text value="[[r.data.code]]"></oj-bind-text></div>
-                    <div>
-                      <div class="nm"><oj-bind-text value="[[r.data.name]]"></oj-bind-text> <span data-bind="html: r.data.sevHtml"></span></div>
-                      <div class="meta" data-bind="html: r.data.metaHtml"></div>
-                    </div>
-                    <div class="ctl">
-                      <span data-bind="html: r.data.resultHtml"></span>
-                      <oj-bind-if test="[[r.data.kind === 'serial']]">
-                        <oj-input-text :id="[['in-' + r.data.id]]" class="wide" value="{{r.data.input}}" placeholder="[[r.data.placeholder]]" label-hint="[[r.data.name]]" label-edge="none" disabled="[[r.data.disabled]]" data-enter="validate" :data-id="[[r.data.id]]"></oj-input-text>
-                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="validate" :data-id="[[r.data.id]]">Validate</oj-button>
-                      </oj-bind-if>
-                      <oj-bind-if test="[[r.data.kind === 'check']]">
-                        <oj-button chroming="solid" disabled="[[r.data.disabled]]" data-act="pass" :data-id="[[r.data.id]]">Pass</oj-button>
-                        <oj-button chroming="danger" disabled="[[r.data.disabled]]" data-act="fail" :data-id="[[r.data.id]]">Fail</oj-button>
-                      </oj-bind-if>
-                      <oj-bind-if test="[[r.data.kind === 'measure']]">
-                        <oj-input-text :id="[['in-' + r.data.id]]" value="{{r.data.input}}" raw-value="{{r.data.raw}}" messages-custom="[[r.data.msgs]]" placeholder="[[r.data.placeholder]]" label-hint="[[r.data.name]]" label-edge="none" disabled="[[r.data.disabled]]" data-enter="record" :data-id="[[r.data.id]]" class="mes-num"></oj-input-text>
-                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="record" :data-id="[[r.data.id]]">Record</oj-button>
-                      </oj-bind-if>
-                      <oj-bind-if test="[[r.data.kind === 'sign']]">
-                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="sign" :data-id="[[r.data.id]]"><oj-bind-text value="[[r.data.signLabel]]"></oj-bind-text></oj-button>
-                      </oj-bind-if>
-                    </div>
-                  </div>
-                  </oj-bind-if>
-                </template>
-              </oj-bind-for-each>
-              </oj-bind-if>
-            </template>
-          </oj-bind-for-each>
+          <!-- ===== the one thing to do now ===== -->
+          <div :class="[['mes-stepcard k-' + card.kind]]">
+            <oj-bind-if test="[[card.stepNo]]"><div class="mes-stepno"><oj-bind-text value="[[card.stepNo]]"></oj-bind-text> <span class="mes-mono">· <oj-bind-text value="[[card.code]]"></oj-bind-text></span> <span data-bind="html: card.sev"></span></div></oj-bind-if>
+            <div class="mes-steptitle"><oj-bind-text value="[[card.title]]"></oj-bind-text></div>
+            <oj-bind-if test="[[card.sub]]"><div class="mes-stepsub"><oj-bind-text value="[[card.sub]]"></oj-bind-text></div></oj-bind-if>
+            <oj-bind-if test="[[card.hasHtml]]"><div class="mes-stephtml" data-bind="html: card.html"></div></oj-bind-if>
 
-          <oj-bind-if test="[[showComplete]]">
-            <div class="mes-sec-title">Complete operation</div>
-            <div class="mes-stack" style="padding:0 16px 16px;gap:10px">
-              <div :class="[[completeReady ? 'oj-text-color-success oj-typography-body-sm' : 'oj-text-color-secondary oj-typography-body-sm']]"><oj-bind-text value="[[completeText]]"></oj-bind-text></div>
-              <div><oj-button id="completeOp" chroming="callToAction" disabled="[[!completeReady]]" on-oj-action="[[completeOp]]"><oj-bind-text value="[[completeLabel]]"></oj-bind-text></oj-button></div>
-            </div>
-          </oj-bind-if>
+            <oj-bind-if test="[[card.is_start]]">
+              <div class="mes-stepctl"><oj-button id="stepStart" chroming="callToAction" class="oj-button-lg" on-oj-action="[[startOp]]"><oj-bind-text value="[[card.btn]]"></oj-bind-text></oj-button></div>
+            </oj-bind-if>
+
+            <oj-bind-if test="[[card.is_serial]]">
+              <div class="mes-stepctl">
+                <oj-input-text id="stepInput" class="mes-stepinput" value="{{stepInput}}" placeholder="[[card.placeholder]]" label-hint="[[card.title]]" label-edge="none" data-enter="submit"></oj-input-text>
+                <oj-button chroming="callToAction" class="oj-button-lg" on-oj-action="[[submitStep]]"><oj-bind-text value="[[card.btn]]"></oj-bind-text></oj-button>
+              </div>
+              <div class="mes-chips">
+                <oj-bind-if test="[[card.chips.length]]"><span class="oj-typography-body-xs oj-text-color-secondary">At line-side (tap to simulate a scan):</span></oj-bind-if>
+                <oj-bind-for-each data="[[card.chips]]"><template data-oj-as="ch"><a href="#" class="mes-chip-link mes-mono" data-act="fill-serial" :data-v="[[ch.data]]"><oj-bind-text value="[[ch.data]]"></oj-bind-text></a></template></oj-bind-for-each>
+                <oj-bind-if test="[[card.noStock]]"><span class="oj-text-color-danger oj-typography-body-sm">None at line-side — ask a material handler.</span></oj-bind-if>
+              </div>
+            </oj-bind-if>
+
+            <oj-bind-if test="[[card.is_measure]]">
+              <div class="mes-stepspec"><span class="lbl">Spec</span> <b class="mes-mono"><oj-bind-text value="[[card.spec]]"></oj-bind-text></b> <span data-bind="html: stepGauge"></span></div>
+              <div class="mes-stepctl">
+                <oj-input-text id="stepInput" class="mes-stepinput mes-num" value="{{stepInput}}" raw-value="{{stepRaw}}" messages-custom="[[stepMsgs]]" placeholder="[[card.placeholder]]" label-hint="[[card.title]]" label-edge="none" data-enter="submit"></oj-input-text>
+                <oj-button chroming="callToAction" class="oj-button-lg" on-oj-action="[[submitStep]]"><oj-bind-text value="[[card.btn]]"></oj-bind-text></oj-button>
+              </div>
+            </oj-bind-if>
+
+            <oj-bind-if test="[[card.is_check]]">
+              <div class="mes-stepctl">
+                <oj-button id="stepPass" chroming="callToAction" class="oj-button-lg mes-pass" on-oj-action="[[passStep]]">Pass</oj-button>
+                <oj-button chroming="outlined" class="oj-button-lg" on-oj-action="[[failStep]]">Fail…</oj-button>
+              </div>
+            </oj-bind-if>
+
+            <oj-bind-if test="[[card.is_sign]]">
+              <div class="mes-stepctl"><oj-button id="stepSign" chroming="callToAction" class="oj-button-lg" on-oj-action="[[signStep]]"><oj-bind-text value="[[card.btn]]"></oj-bind-text></oj-button></div>
+            </oj-bind-if>
+
+            <oj-bind-if test="[[card.is_complete]]">
+              <div class="mes-stepctl"><oj-button id="completeOp" chroming="callToAction" class="oj-button-lg" on-oj-action="[[completeOp]]"><oj-bind-text value="[[card.btn]]"></oj-bind-text></oj-button></div>
+            </oj-bind-if>
+          </div>
+
+          <!-- ===== all steps: progress and jump-to ===== -->
+          <div class="mes-sec-title">Steps<span class="cnt"><oj-bind-text value="[[doneText]]"></oj-bind-text></span></div>
+          <ol class="mes-steps">
+            <oj-bind-for-each data="[[steps]]">
+              <template data-oj-as="st">
+                <li :class="[[st.data.cls]]" :data-act="[[st.data.act]]" :data-enter="[[st.data.act]]" :data-id="[[st.data.id]]" :tabindex="[[st.data.act ? '0' : '-1']]">
+                  <span class="dot" data-bind="html: st.data.icon"></span>
+                  <span class="nm"><oj-bind-text value="[[st.data.name]]"></oj-bind-text></span>
+                  <span class="lbl"><oj-bind-text value="[[st.data.label]]"></oj-bind-text></span>
+                  <span class="val" data-bind="html: st.data.value"></span>
+                </li>
+              </template>
+            </oj-bind-for-each>
+          </ol>
+
+          <div class="mes-sidefacts">
+            <oj-collapsible>
+              <span slot="header" class="oj-typography-body-sm"><b><oj-bind-text value="[[instrTitle]]"></oj-bind-text></b></span>
+              <ol class="mes-instr"><oj-bind-for-each data="[[instr]]"><template data-oj-as="i"><li><oj-bind-text value="[[i.data]]"></oj-bind-text></li></template></oj-bind-for-each></ol>
+            </oj-collapsible>
+            <oj-bind-if test="[[materialHtml]]"><div class="oj-typography-body-sm mes-material" data-bind="html: materialHtml"></div></oj-bind-if>
+          </div>
 
           <oj-dialog id="failDialog" dialog-title="Record checklist failure" cancel-behavior="icon" class="mes-dialog">
             <div slot="body"><div class="mes-dialog-body">
@@ -166,7 +167,7 @@
             <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeFail]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[submitFail]]">Record FAIL</oj-button></div>
           </oj-dialog>
 
-          <oj-dialog id="logDrDialog" dialog-title="Log discrepancy" cancel-behavior="icon" class="mes-dialog wide">
+          <oj-dialog id="logDrDialog" dialog-title="Report a problem" cancel-behavior="icon" class="mes-dialog wide">
             <div slot="body">
               <oj-form-layout max-columns="2" direction="row">
                 <oj-select-single label-hint="Severity" data="[[sevDP]]" value="{{dr.sev}}"></oj-select-single>
@@ -178,7 +179,7 @@
               </oj-form-layout>
               <div class="oj-typography-body-sm oj-text-color-secondary">Major and Critical discrepancies place the unit on quality hold immediately.</div>
             </div>
-            <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeLogDr]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[submitLogDr]]">Open discrepancy</oj-button></div>
+            <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeLogDr]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[submitLogDr]]">Report problem</oj-button></div>
           </oj-dialog>
         </oj-bind-if>
       </section>

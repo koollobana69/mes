@@ -23,7 +23,7 @@
                 <span class="ic" data-bind="html: i.data.icon"></span>
                 <div class="tx"><div class="t" data-bind="html: i.data.title"></div><div class="s" data-bind="html: i.data.sub"></div><div class="m"><oj-bind-text value="[[i.data.meta]]"></oj-bind-text></div></div>
                 <oj-bind-if test="[[i.data.hasAction]]">
-                  <oj-button chroming="[[i.data.chroming]]" :data-act="[[i.data.act]]" :data-href="[[i.data.href]]" :data-part="[[i.data.part]]" :data-ls="[[i.data.ls]]"><oj-bind-text value="[[i.data.label]]"></oj-bind-text></oj-button>
+                  <oj-button chroming="[[i.data.chroming]]" :data-act="[[i.data.act]]" :data-href="[[i.data.href]]" :data-part="[[i.data.part]]" :data-ls="[[i.data.ls]]" :data-serial="[[i.data.serial]]" :data-seq="[[i.data.seq]]"><oj-bind-text value="[[i.data.label]]"></oj-bind-text></oj-button>
                 </oj-bind-if>
               </li>
             </template>

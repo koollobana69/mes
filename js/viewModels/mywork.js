@@ -20,12 +20,19 @@ define(['services/ui', 'services/work'], function (ui, work) {
         hasAction: !!i.action, label: i.action ? i.action.label : '',
         chroming: i.action && n === 0 && g.id !== 'blocked' ? 'callToAction' : 'outlined',
         act: i.action ? (i.action.act || 'open') : '', href: i.action && i.action.href ? i.action.href : '',
-        part: i.action && i.action.data ? i.action.data.part : '', ls: i.action && i.action.data ? i.action.data.ls : '',
+        part: i.action && i.action.data ? i.action.data.part || '' : '', ls: i.action && i.action.data ? i.action.data.ls || '' : '',
+        serial: i.action && i.action.data ? i.action.data.serial || '' : '', seq: i.action && i.action.data ? i.action.data.seq || '' : '',
       })),
     }));
     this.stations = p.role === 'Operator' || p.role === 'Quality Technician' ? p.quals.map(id => ({ id, href: '#/station/' + id, label: id + ' · ' + MES.station(id).name })) : [];
     this.actions = {
       open: el => app.go(el.getAttribute('data-href')),
+      // Start really starts the operation, then opens the guided station view on the first step
+      start: el => {
+        const r = MES.startOp(el.getAttribute('data-serial'), Number(el.getAttribute('data-seq')), DB.currentUser);
+        if (!r.ok) { app.toast(r.msg, 'bad'); return app.go(el.getAttribute('data-href')); }
+        MES.save(); app.go(el.getAttribute('data-href'));
+      },
       fulfill: el => app.fulfill(el.getAttribute('data-part'), el.getAttribute('data-ls')),
     };
   };
