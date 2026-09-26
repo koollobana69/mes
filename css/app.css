@@ -327,3 +327,34 @@ oj-collapsible.mes-op { border-bottom: 1px solid var(--mes-line); }
   .mes-content { padding: 16px 16px 48px; }
   .mes-ph h1 { font-size: 1.5rem; }
 }
+
+/* ---------- My Work ---------- */
+.mes-view.mes-work { max-width: 980px; }
+.mes-work-summary { font-weight: 700; padding: 6px 12px; border-radius: 999px; background: var(--mes-accent-soft); color: var(--mes-accent); }
+.mes-work-summary.ok { background: var(--oj-core-success-secondary-1, #e7f3ea); color: var(--oj-core-text-color-success); }
+.mes-count-pill { font-size: .75rem; font-weight: 700; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px; background: rgb(241, 239, 236); }
+.mes-work-list { list-style: none; margin: 0; padding: 0; }
+.mes-work-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-top: 1px solid rgb(241, 239, 236); }
+.mes-work-item:first-child { border-top: 0; }
+.mes-work-item .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--mes-accent-soft); color: var(--mes-accent); }
+.mes-work-item.tone-ok .ic { background: var(--oj-core-success-secondary-1, #e7f3ea); color: var(--oj-core-text-color-success); }
+.mes-work-item.tone-warn .ic { background: var(--oj-core-warning-secondary-1, #fbf1dc); color: var(--oj-core-text-color-warning); }
+.mes-work-item.tone-bad .ic { background: var(--oj-core-danger-secondary-1, #fbe9e7); color: var(--oj-core-text-color-danger); }
+.mes-work-item.tone-neutral .ic { background: rgb(241, 239, 236); color: var(--mes-muted); }
+.mes-work-item .tx { flex: 1; min-width: 0; }
+.mes-work-item .t { font-weight: 700; font-size: 1rem; }
+.mes-work-item .s { font-size: .875rem; margin-top: 1px; }
+.mes-work-item .m { font-size: .8125rem; color: var(--mes-muted); margin-top: 2px; }
+.mes-muted-card { box-shadow: none; background: transparent; }
+.mes-muted-card .mes-work-item .t { font-weight: 600; font-size: .9375rem; }
+.mes-caughtup { padding: 48px 16px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.mes-caughtup .big { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-size: 1.75rem; background: var(--oj-core-success-secondary-1, #e7f3ea); color: var(--oj-core-text-color-success); margin-bottom: 6px; }
+.mes-work-stations { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; }
+.mes-chip-link { font-size: .8125rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--mes-line); background: var(--mes-panel); color: inherit; text-decoration: none; }
+.mes-chip-link:hover { border-color: var(--mes-accent); color: var(--mes-accent); text-decoration: none; }
+@media (max-width: 640px) { .mes-work-item { flex-wrap: wrap; } .mes-work-item oj-button { margin-inline-start: 50px; } }
+.mes-oppos { display: flex; align-items: center; gap: 12px; }
+.mes-oppos .mes-progress { flex: 1; max-width: 320px; }
+.mes-lots-ok { font-size: .8125rem; color: var(--mes-muted); padding: 10px 18px 0; }
+.mes-done-toggle { padding: 8px 12px 0; display: flex; justify-content: flex-end; }
+.mes-await { font-size: .8125rem; font-weight: 600; color: var(--mes-muted); padding: 4px 10px; border-radius: 999px; background: rgb(241, 239, 236); }

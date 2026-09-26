@@ -48,6 +48,7 @@
           </ul>
           <oj-bind-if test="[[queue.length === 0]]"><div class="mes-empty">No units queued at this station.</div></oj-bind-if>
         </section>
+        <oj-bind-if test="[[showRecent]]">
         <section class="mes-card">
           <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Recently completed here</h2></div>
           <ul class="mes-queue">
@@ -59,6 +60,7 @@
           </ul>
           <oj-bind-if test="[[recent.length === 0]]"><div class="mes-empty">None yet.</div></oj-bind-if>
         </section>
+        </oj-bind-if>
       </div>
 
       <section class="mes-card">
@@ -74,15 +76,20 @@
               <div class="mes-acts">
                 <oj-bind-if test="[[showStart]]"><oj-button chroming="callToAction" on-oj-action="[[startOp]]"><oj-bind-text value="[[startLabel]]"></oj-bind-text></oj-button></oj-bind-if>
                 <oj-button chroming="outlined" on-oj-action="[[openLogDr]]">Log discrepancy</oj-button>
-                <a class="oj-link" :href="[[travelerHref]]" style="align-self:center">Traveler</a>
+                <oj-bind-if test="[[showTraveler]]"><a class="oj-link" :href="[[travelerHref]]" style="align-self:center">Traveler</a></oj-bind-if>
               </div>
             </div>
+            <oj-bind-if test="[[showOpbar]]">
             <div>
               <div class="oj-typography-body-xs oj-text-color-secondary" style="margin-bottom:4px"><oj-bind-text value="[[opPos]]"></oj-bind-text></div>
               <div class="mes-opbar">
                 <oj-bind-for-each data="[[opbar]]"><template data-oj-as="b"><div :class="[[b.data.cls]]" :title="[[b.data.title]]"><oj-bind-text value="[[b.data.label]]"></oj-bind-text></div></template></oj-bind-for-each>
               </div>
             </div>
+            </oj-bind-if>
+            <oj-bind-if test="[[!showOpbar]]">
+              <div class="mes-oppos"><span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[opPos]]"></oj-bind-text></span><div class="mes-progress"><span class="done" :style.width="[[opPct + '%']]"></span></div></div>
+            </oj-bind-if>
             <div :class="[[bannerCls]]"><span style="display:contents" data-bind="html: bannerHtml"></span>
               <oj-bind-if test="[[showProgress]]"><oj-progress-bar value="[[progress]]" max="100" style="width:160px"></oj-progress-bar></oj-bind-if>
             </div>
@@ -92,6 +99,8 @@
             </div>
           </div>
 
+          <oj-bind-if test="[[lotsOkText]]"><div class="mes-lots-ok"><oj-bind-text value="[[lotsOkText]]"></oj-bind-text></div></oj-bind-if>
+          <oj-bind-if test="[[doneCount > 0]]"><div class="mes-done-toggle"><oj-button chroming="borderless" class="oj-button-sm" on-oj-action="[[toggleDone]]"><oj-bind-text value="[[toggleDoneLabel]]"></oj-bind-text></oj-button></div></oj-bind-if>
           <oj-bind-if test="[[hasLots]]">
             <div class="mes-sec-title">Lot-controlled material · backflushed on completion</div>
             <div style="padding:0 16px 8px">
@@ -103,9 +112,11 @@
 
           <oj-bind-for-each data="[[sections]]">
             <template data-oj-as="sec">
+              <oj-bind-if test="[[sec.data.visible()]]">
               <div class="mes-sec-title"><oj-bind-text value="[[sec.data.title]]"></oj-bind-text><span class="cnt"><oj-bind-text value="[[sec.data.count]]"></oj-bind-text></span></div>
               <oj-bind-for-each data="[[sec.data.rows]]">
                 <template data-oj-as="r">
+                  <oj-bind-if test="[[r.data.visible()]]">
                   <div :class="[[r.data.cls]]">
                     <div class="code"><span class="st" data-bind="html: r.data.stIcon"></span><oj-bind-text value="[[r.data.code]]"></oj-bind-text></div>
                     <div>
@@ -131,8 +142,10 @@
                       </oj-bind-if>
                     </div>
                   </div>
+                  </oj-bind-if>
                 </template>
               </oj-bind-for-each>
+              </oj-bind-if>
             </template>
           </oj-bind-for-each>
 
@@ -140,7 +153,7 @@
             <div class="mes-sec-title">Complete operation</div>
             <div class="mes-stack" style="padding:0 16px 16px;gap:10px">
               <div :class="[[completeReady ? 'oj-text-color-success oj-typography-body-sm' : 'oj-text-color-secondary oj-typography-body-sm']]"><oj-bind-text value="[[completeText]]"></oj-bind-text></div>
-              <div><oj-button chroming="callToAction" disabled="[[!completeReady]]" on-oj-action="[[completeOp]]"><oj-bind-text value="[[completeLabel]]"></oj-bind-text></oj-button></div>
+              <div><oj-button id="completeOp" chroming="callToAction" disabled="[[!completeReady]]" on-oj-action="[[completeOp]]"><oj-bind-text value="[[completeLabel]]"></oj-bind-text></oj-button></div>
             </div>
           </oj-bind-if>
 

@@ -30,21 +30,7 @@ define(['services/ui'], function (ui) {
     ], rq);
     this.hasMoves = rq.length > 0;
     this.actions = {
-      fulfill: el => {
-        const r0 = MES.replenishment().find(r => r.partId === el.getAttribute('data-part') && r.ls === el.getAttribute('data-ls'));
-        if (!r0) return app.toast('Request already satisfied.', 'warn');
-        const p = MES.currentUser();
-        if (!['Material Handler', 'Supervisor', 'Quality Engineer'].includes(p.role)) return app.toast(p.name + ' (' + p.role + ') cannot post material moves. Switch to Rosa Jimenez or Tom Becker.', 'bad');
-        let short = r0.short, n = 0;
-        for (const src of r0.sources) {
-          if (short <= 1e-9) break;
-          const q = src.serial ? 1 : Number(Math.min(src.qty, Math.max(short, short * 1.5)).toFixed(2));
-          const r = MES.transfer(src.id, q, r0.ls, DB.currentUser, 'Replenishment request');
-          if (!r.ok) return app.commit(r);
-          short -= q; n++;
-        }
-        app.commit({ ok: true }, 'Posted ' + n + ' move(s) of ' + r0.partId + ' to ' + r0.ls);
-      },
+      fulfill: el => app.fulfill(el.getAttribute('data-part'), el.getAttribute('data-ls')),
     };
   };
 });

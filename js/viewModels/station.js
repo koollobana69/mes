@@ -8,23 +8,27 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     const [stId, serialArg] = params.args;
     const cu = MES.currentUser();
     this.picker = !stId;
+    // Operators and technicians get a lean terminal: only what they need to act on
+    const lean = ['Operator', 'Quality Technician'].includes(cu.role);
+    this.lean = lean;
 
     /* ---------------- station picker ---------------- */
     if (this.picker) {
-      this.userLine = 'Choose a station. You are signed in as ' + cu.name + ' (' + cu.role + ').';
-      this.groups = ['B10', 'B20', 'B30'].map(b => {
-        const zones = [...new Set(DB.stations.filter(s => s.building === b).map(s => s.wc))];
+      this.userLine = lean ? 'Your qualified stations. Blue = running, red = unit on hold.' : 'Choose a station. You are signed in as ' + cu.name + ' (' + cu.role + ').';
+      const visible = s0 => !lean || cu.quals.includes(s0.id);
+      this.groups = ['B10', 'B20', 'B30'].filter(b => DB.stations.some(s0 => s0.building === b && visible(s0))).map(b => {
+        const zones = [...new Set(DB.stations.filter(s => s.building === b && visible(s)).map(s => s.wc))];
         return {
           name: MES.building(b).name,
           zones: zones.map(z => ({
             zone: z,
-            tiles: DB.stations.filter(s => s.building === b && s.wc === z).map(s => {
+            tiles: DB.stations.filter(s => s.building === b && s.wc === z && visible(s)).map(s => {
               const op = ui.opForStation(s.id), at = ui.stationUnits(s.id);
               const active = at.find(u => u.ops[op.seq].status === 'Active' && !MES.unitHeld(u.serial));
               return {
                 href: '#/station/' + s.id, cls: 'mes-stn ' + (at.some(u => MES.unitHeld(u.serial)) ? 'held' : active ? 'active' : ''),
                 op: s.id + ' · OP' + op.seq, name: s.name, unit: active ? '▶ ' + active.serial : at.length ? at.length + ' waiting' : 'idle',
-                q: cu.quals.includes(s.id) ? '✓ You are qualified' : '',
+                q: lean ? '' : (cu.quals.includes(s.id) ? '✓ You are qualified' : ''),
               };
             }),
           })),
@@ -46,7 +50,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
 
     this.andon = {
       title: st.id + ' · ' + st.name,
-      meta: MES.building(st.building).name + ' · ' + st.wc + ' · OP' + op.seq + ' of ' + routing.length + ' operations · ' + itemId + ' · std ' + op.stdMin + ' min',
+      meta: lean ? 'OP' + op.seq + ' ' + op.name + ' · std ' + op.stdMin + ' min' : MES.building(st.building).name + ' · ' + st.wc + ' · OP' + op.seq + ' of ' + routing.length + ' operations · ' + itemId + ' · std ' + op.stdMin + ' min',
       light: 'light ' + (units.some(x => MES.unitHeld(x.serial)) ? 'hold' : running ? 'run' : 'idle'),
       stateCls: 'state ' + (units.some(x => MES.unitHeld(x.serial)) ? 'hold' : running ? 'run' : 'idle'),
       state: units.some(x => MES.unitHeld(x.serial)) ? 'HOLD' : running ? 'RUNNING' : 'IDLE',
@@ -58,6 +62,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       const since = s === 'Active' ? U.dur(MES.now() - x.ops[op.seq].start) : 'since ' + U.ago(prevOp && x.ops[prevOp.seq] && x.ops[prevOp.seq].end || x.launchedAt);
       return { href: '#/station/' + stId + '/' + x.serial, cls: u && x.serial === u.serial ? 'on' : '', serial: x.serial, chip: h ? ui.badge('On Hold') : s === 'Active' ? ui.badge('Active', 'In process') : ui.badge('Queued'), since };
     });
+    this.showRecent = !lean;
     this.recent = DB.units.filter(x => x.itemId === itemId && x.ops[op.seq] && x.ops[op.seq].status === 'Done')
       .sort((a, b) => b.ops[op.seq].end - a.ops[op.seq].end).slice(0, 4)
       .map(x => ({ href: '#/unit/' + x.serial, serial: x.serial, text: 'Completed ' + U.ago(x.ops[op.seq].end) + ' by ' + MES.userName(x.ops[op.seq].completedBy) }));
@@ -76,7 +81,10 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     const doneN = states.filter(s => s.state === 'done' || s.state === 'accepted').length;
 
     this.serial = u.serial;
-    this.eyebrow = MES.part(u.itemId).name + ' · ' + u.jobId + ' · plan ' + u.planId;
+    this.eyebrow = lean ? MES.part(u.itemId).name : MES.part(u.itemId).name + ' · ' + u.jobId + ' · plan ' + u.planId;
+    this.showTraveler = !lean;
+    this.showOpbar = !lean;
+    this.opPct = Math.round(u.opIdx / routing.length * 100);
     this.vinText = u.itemId === 'VEH-T1' ? 'VIN check digit ' + u.serial[8] + ' ' + (U.vinValid(u.serial) ? '✓ valid' : '✕ invalid') : '';
     this.showStart = o.status === 'Pending' && !held;
     this.startLabel = 'Start OP' + op.seq;
@@ -102,6 +110,9 @@ define(['knockout', 'services/ui'], function (ko, ui) {
 
     /* rows */
     const ls = st.building + '-LS';
+    const stShow = app.st('station:showDone', { v: !lean });
+    this.showDone = ko.observable(stShow.v);
+    this.showDone.subscribe(v => { stShow.v = v; });
     const rowMap = {};
     const drNote = s => s.r && s.r.drId ? ' · ' + ui.drLink(s.r.drId) + ' ' + (MES.dr(s.r.drId) ? ui.badge(MES.dr(s.r.drId).status) : '') : '';
     const mkRow = c => {
@@ -143,8 +154,11 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       } else if (c.type === 'signoff') {
         row.metaHtml = '<span>Role: ' + E(c.role) + '</span><span>Meaning: ' + E(c.meaning) + '</span>' + (c.meaning !== 'Performed' ? '<span>Independent of performer</span>' : '');
         if (s.state === 'done') row.resultHtml = ui.sigCard(s.sig);
+        else if (lean && !MES.canSign(cu, c.role)) { row.resultHtml = '<span class="mes-await">Waiting for ' + E(c.role) + '</span>'; }
         else { row.kind = 'sign'; row.signLabel = 'Sign as ' + c.role; row.disabled = !(o.status === 'Active' && !held); }
       }
+      row.done = s.state === 'done' || s.state === 'accepted';
+      row.visible = ko.pureComputed(() => !row.done || this.showDone());
       rowMap[c.id] = row;
       return row;
     };
@@ -156,6 +170,11 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       section('Station-end checklist', chars.filter(c => c.type === 'check' && c.phase === 'end')),
       section('Sign-off', chars.filter(c => c.type === 'signoff')),
     ].filter(Boolean);
+    const doneCount = this.sections.reduce((n, sec) => n + sec.rows.filter(r => r.done).length, 0);
+    this.doneCount = doneCount;
+    this.toggleDoneLabel = ko.pureComputed(() => this.showDone() ? 'Hide ' + doneCount + ' completed item' + (doneCount === 1 ? '' : 's') : 'Show ' + doneCount + ' completed item' + (doneCount === 1 ? '' : 's'));
+    this.toggleDone = () => this.showDone(!this.showDone());
+    this.sections.forEach(sec => { sec.allDone = sec.rows.every(r => r.done); sec.visible = ko.pureComputed(() => !sec.allDone || this.showDone()); });
 
     const lots = (DB.boms[u.itemId] || []).filter(b => b.op === op.seq && MES.part(b.partId).tracking !== 'Serial');
     this.lotsTable = ui.table([
@@ -163,12 +182,14 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       { h: 'Qty / unit', num: 1, v: b => b.qty + ' ' + E(MES.part(b.partId).uom) },
       { h: 'Line-side (' + ls + ')', v: b => { const l = MES.lotAvailable(b.partId, ls); const q = l.reduce((s2, i) => s2 + i.qty, 0); return (q >= b.qty ? ui.badge('Available', U.num(q, 1) + ' ' + MES.part(b.partId).uom) : ui.badge('Short', U.num(q, 1) + ' ' + MES.part(b.partId).uom)) + ' <span class="oj-typography-body-xs oj-text-color-secondary">' + E(l.map(i => i.lot).join(', ')) + '</span>'; } },
     ], lots);
-    this.hasLots = lots.length > 0;
+    const lotShort = lots.filter(b => MES.lotAvailable(b.partId, ls).reduce((q, i) => q + i.qty, 0) + 1e-9 < b.qty);
+    this.hasLots = lots.length > 0 && (!lean || lotShort.length > 0);
+    this.lotsOkText = lots.length && lean && !lotShort.length ? 'Lot material at line-side: ' + lots.map(b => b.partId).join(', ') + ' — backflushed on completion.' : '';
 
     const blockers = active ? MES.opBlockers(u, op.seq) : [];
     this.showComplete = active;
     this.completeReady = !blockers.length;
-    this.completeText = blockers.length ? blockers.length + ' item(s) outstanding: ' + blockers.slice(0, 4).join(' · ') + (blockers.length > 4 ? ' …' : '')
+    this.completeText = blockers.length ? (lean ? blockers.length + ' item' + (blockers.length === 1 ? '' : 's') + ' to go: ' + blockers.map(b => b.split(' ')[0]).join(', ') : blockers.length + ' item(s) outstanding: ' + blockers.slice(0, 4).join(' · ') + (blockers.length > 4 ? ' …' : ''))
       : 'All quality-plan items are satisfied. Completing backflushes lot material' + (op.test ? ', creates the ' + op.test + ' record' : '') + ' and moves the unit to the next operation.';
     this.completeLabel = isLast ? 'Complete & release ' + ui.itemShort[u.itemId] : 'Complete OP' + op.seq;
 

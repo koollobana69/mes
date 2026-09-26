@@ -59,6 +59,21 @@ function loadPlaywright() {
     await go('dr/DR-26-0001');
     ok((await page.evaluate(() => location.hash)) === '#/dr/DR-26-0001', 'detail route is not overridden by nav selection');
 
+    step('Role-based views');
+    await setSelect('#usersel', 'U106'); await settle(1100);
+    ok((await page.evaluate(() => location.hash)) === '#/mywork', 'operator lands on My Work');
+    const opNav = await page.$$eval('oj-navigation-list li', n => n.map(x => x.id));
+    ok(opNav.join(',') === 'mywork,station', 'operator sees only My Work and Station Terminal (' + opNav.join(',') + ')');
+    await go('inventory');
+    ok((await page.evaluate(() => location.hash)) === '#/mywork', 'operator is redirected away from Inventory');
+    await setSelect('#usersel', 'U201'); await settle(1100);
+    ok((await page.$$eval('oj-navigation-list li', n => n.map(x => x.id))).join(',') === 'mywork,dispatch,inventory,moves', 'material handler sees material menus only');
+    await setSelect('#usersel', 'U302'); await settle(1100);
+    const qeItems = await page.$$eval('.mes-work-item', n => n.length);
+    ok(qeItems > 0, 'quality engineer My Work lists actionable items (' + qeItems + ')');
+    await setSelect('#usersel', 'U401'); await settle(1100);
+    ok((await page.evaluate(() => location.hash)) === '#/dashboard', 'supervisor lands on the dashboard');
+
     step('Station execution with an out-of-tolerance reading');
     const pick = await page.evaluate(() => {
       const u = DB.units.find(x => x.status === 'In Process' && !MES.unitHeld(x.serial) && MES.currentOp(x) && x.opIdx < MES.routing(x.itemId).length - 1 &&
@@ -67,9 +82,9 @@ function loadPlaywright() {
       const op = MES.currentOp(u);
       return { serial: u.serial, st: op.station, who: DB.people.find(p => p.role === 'Operator' && p.quals.includes(op.station)).id };
     });
-    await go('station/' + pick.st + '/' + pick.serial);
     await setSelect('#usersel', pick.who); await settle(900);
     ok((await toast()).startsWith('Signed in as'), 'user switch via oj-select-single');
+    await go('station/' + pick.st + '/' + pick.serial);
     const meas = await page.$$eval('oj-input-text[data-enter="record"]', n => n.map(x => ({ id: x.getAttribute('data-id') })));
     ok(meas.length > 0, 'pending measurement inputs rendered');
     const spec = await page.evaluate(([s, id]) => { const u = MES.unit(s); const c = MES.findChar(MES.plan(u.planId), id); return { lsl: c.lsl, usl: c.usl }; }, [pick.serial, meas[0].id]);
@@ -129,7 +144,7 @@ function loadPlaywright() {
       if (err) { console.log('    sign error: ' + err); await page.evaluate(() => document.getElementById('sigDialog').close()); }
     }
     const seqBefore = await page.evaluate(s => MES.currentOp(MES.unit(s)).seq, pick.serial);
-    await page.click('oj-button:has-text("Complete")');
+    await page.click('#completeOp');
     await settle(900);
     const seqAfter = await page.evaluate(s => { const u = MES.unit(s); return u.status === 'Complete' ? 'done' : MES.currentOp(u).seq; }, pick.serial);
     ok(seqAfter !== seqBefore, 'operation completed (OP' + seqBefore + ' → ' + seqAfter + ')' + (seqAfter === seqBefore ? ' blockers: ' + JSON.stringify(await page.evaluate(s => { const u = MES.unit(s); return MES.opBlockers(u, MES.currentOp(u).seq).concat(MES.unitHeld(s) ? ['HELD'] : [], [u.ops[MES.currentOp(u).seq].status]); }, pick.serial)) : ''));
@@ -159,6 +174,7 @@ function loadPlaywright() {
     ok(await page.evaluate(() => MES.plan('QP-VEH-T1-B').status) === 'Released', 'plan rev B released with e-signature');
 
     step('Every screen renders');
+    await setSelect('#usersel', 'U401'); await settle(1100);
     for (const r of ['dashboard', 'jobs', 'job/WO-26-0414', 'dispatch', 'station', 'plans', 'drs', 'holds', 'tests', 'inspections', 'inventory', 'moves', 'genealogy', 'genealogy/L260902-118', 'items', 'item/VEH-T1', 'people', 'audit']) {
       await go(r);
       const h = await page.textContent('#content h1').catch(() => '');
