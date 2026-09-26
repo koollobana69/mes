@@ -1,0 +1,11 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Test record not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/tests">Test records</a> / <oj-bind-text value="[[id]]"></oj-bind-text></div>
+    <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg"><oj-bind-text value="[[title]]"></oj-bind-text></h1><div class="mes-sub" data-bind="html: subHtml"></div></div></div>
+    <div class="mes-grid mes-g-main">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Test steps</h2></div><div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Test steps" data="[[steps.dp]]" columns="[[steps.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Record</h2></div><div class="mes-card-bd" data-bind="html: recordHtml"></div></section>
+    </div>
+  </oj-bind-if>
+</div>

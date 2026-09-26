@@ -1,0 +1,9 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Production</div><h1 class="oj-typography-heading-lg">Jobs &amp; WIP</h1>
+    <div class="mes-sub">Released production orders. Each launched unit carries its own serial and the quality plan revision it was built to.</div></div></div>
+  <section class="mes-card"><div class="mes-card-bd flush">
+    <oj-table class="mes-table" aria-label="Production jobs" data="[[t.dp]]" columns="[[t.columns]]" on-oj-row-action="[[rowAction]]">
+      <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template>
+    </oj-table>
+  </div></section>
+</div>

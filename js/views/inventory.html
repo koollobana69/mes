@@ -1,0 +1,51 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Materials</div><h1 class="oj-typography-heading-lg">Inventory</h1>
+    <div class="mes-sub">Lot and serial stock by location across the four buildings. Consumed serials stay here with the unit they were installed in.</div></div>
+    <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[openReceive]]">Receive material</oj-button></div></div>
+  <div class="mes-stn-grid">
+    <oj-bind-for-each data="[[locTiles]]"><template data-oj-as="l">
+      <a href="#" :class="[[l.data.cls]]" data-act="invloc" :data-id="[[l.data.id]]" style="min-height:0"><span class="op"><oj-bind-text value="[[l.data.op]]"></oj-bind-text></span><span class="nm"><oj-bind-text value="[[l.data.name]]"></oj-bind-text></span><span class="q"><oj-bind-text value="[[l.data.q]]"></oj-bind-text></span></a>
+    </template></oj-bind-for-each>
+  </div>
+  <section class="mes-card">
+    <div class="mes-card-bd mes-row" style="align-items:flex-end">
+      <oj-select-single label-hint="Location" data="[[locDP]]" value="{{loc}}" style="max-width:280px"></oj-select-single>
+      <oj-select-single label-hint="Part" data="[[partDP]]" value="{{part}}" style="max-width:300px"></oj-select-single>
+      <oj-select-single label-hint="Status" data="[[statusDP]]" value="{{status}}" style="max-width:240px"></oj-select-single>
+      <oj-input-text label-hint="Search" value="{{q}}" placeholder="Serial, lot, unit" clear-icon="conditional" style="max-width:240px"></oj-input-text>
+      <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[t().note]]"></oj-bind-text></span>
+    </div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table tall" aria-label="Inventory" data="[[t().dp]]" columns="[[t().columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template><template slot="noData"><div class="mes-empty">No stock matches.</div></template></oj-table></div>
+  </section>
+  <oj-dialog id="moveDialog" dialog-title="[[mv.title]]" cancel-behavior="icon" class="mes-dialog">
+    <div slot="body"><div class="mes-dialog-body">
+      <div class="oj-typography-body-sm"><oj-bind-text value="[[mv.info]]"></oj-bind-text></div>
+      <oj-form-layout max-columns="1">
+        <oj-bind-if test="[[!mv.isSerial()]]"><oj-input-text label-hint="Quantity" value="{{mv.qty}}"></oj-input-text></oj-bind-if>
+        <oj-select-single label-hint="To location" data="[[mv.destDP]]" value="{{mv.to}}" required></oj-select-single>
+        <oj-input-text label-hint="Reference" value="{{mv.ref}}" placeholder="Kanban card, request #"></oj-input-text>
+      </oj-form-layout>
+      <oj-bind-if test="[[mv.error()]]"><div class="mes-inline-error" role="alert"><oj-bind-text value="[[mv.error]]"></oj-bind-text></div></oj-bind-if>
+    </div></div>
+    <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[mv.close]]">Cancel</oj-button><oj-button chroming="callToAction" on-oj-action="[[mv.post]]">Post move</oj-button></div>
+  </oj-dialog>
+  <oj-dialog id="rcvDialog" dialog-title="Receive material" cancel-behavior="icon" class="mes-dialog wide">
+    <div slot="body"><div class="mes-dialog-body">
+      <oj-form-layout max-columns="2" direction="row">
+        <oj-select-single label-hint="Part" data="[[boughtDP]]" value="{{rc.part}}"></oj-select-single>
+        <oj-select-single label-hint="Receive to" data="[[rcvLocDP]]" value="{{rc.to}}"></oj-select-single>
+        <oj-input-text label-hint="ASN / packing slip" value="{{rc.ref}}" placeholder="ASN 4471"></oj-input-text>
+        <oj-bind-if test="[[!rc.isSerial()]]">
+          <oj-input-text label-hint="Supplier lot" value="{{rc.lot}}" placeholder="e.g. L261001-130"></oj-input-text>
+          <oj-input-text label-hint="Quantity" value="{{rc.qty}}"></oj-input-text>
+        </oj-bind-if>
+        <oj-bind-if test="[[rc.isSerial()]]">
+          <oj-text-area label-hint="Serial numbers (one per line)" value="{{rc.serials}}" rows="4" colspan="2"></oj-text-area>
+        </oj-bind-if>
+      </oj-form-layout>
+      <div class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[rc.hint]]"></oj-bind-text></div>
+      <oj-bind-if test="[[rc.error()]]"><div class="mes-inline-error" role="alert"><oj-bind-text value="[[rc.error]]"></oj-bind-text></div></oj-bind-if>
+    </div></div>
+    <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[rc.close]]">Cancel</oj-button><oj-button chroming="callToAction" on-oj-action="[[rc.post]]">Post receipt</oj-button></div>
+  </oj-dialog>
+</div>

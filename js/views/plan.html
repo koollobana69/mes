@@ -1,0 +1,96 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Quality plan not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/plans">Quality plans</a> / <oj-bind-text value="[[title]]"></oj-bind-text></div>
+    <div class="mes-ph">
+      <div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div>
+        <h1 class="oj-typography-heading-lg"><oj-bind-text value="[[title]]"></oj-bind-text> <span data-bind="html: statusHtml"></span></h1>
+        <div class="mes-sub"><oj-bind-text value="[[sub]]"></oj-bind-text></div></div>
+      <div class="mes-acts">
+        <oj-bind-if test="[[draft]]">
+          <oj-button chroming="outlined" on-oj-action="[[discard]]">Discard draft</oj-button>
+          <oj-button chroming="callToAction" on-oj-action="[[release]]">Approve &amp; release</oj-button>
+        </oj-bind-if>
+        <oj-bind-if test="[[draftHref]]"><a class="oj-link" :href="[[draftHref]]" style="align-self:center"><oj-bind-text value="[[draftLabel]]"></oj-bind-text></a></oj-bind-if>
+        <oj-bind-if test="[[canNewRev]]"><oj-button chroming="callToAction" on-oj-action="[[newRevision]]">New revision</oj-button></oj-bind-if>
+      </div>
+    </div>
+
+    <div class="mes-grid mes-g3">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Plan summary</h2></div><div class="mes-card-bd" data-bind="html: summaryHtml"></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Plan checks</h2><span class="mes-hint"><oj-bind-text value="[[issuesHint]]"></oj-bind-text></span></div><div class="mes-card-bd flush" style="max-height:260px;overflow:auto" data-bind="html: issuesHtml"></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Revision history</h2></div><div class="mes-card-bd flush" data-bind="html: revsHtml"></div></section>
+    </div>
+    <div class="mes-row" style="gap:16px" data-bind="html: legendHtml"></div>
+
+    <section class="mes-card">
+      <div class="mes-card-bd mes-row" style="gap:16px">
+        <oj-select-single label-hint="Show" data="[[filterDP]]" value="{{filter}}" style="max-width:420px"></oj-select-single>
+        <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[opCount]]"></oj-bind-text></span>
+      </div>
+    </section>
+
+    <oj-bind-for-each data="[[ops]]">
+      <template data-oj-as="o">
+        <section class="mes-card">
+          <div class="mes-card-hd">
+            <div class="mes-optitle"><span class="seq"><oj-bind-text value="[['OP' + o.data.seq]]"></oj-bind-text></span><h3 class="oj-typography-subheading-xs"><oj-bind-text value="[[o.data.name]]"></oj-bind-text></h3>
+              <span class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[o.data.meta]]"></oj-bind-text></span></div>
+            <div class="mes-acts"><span class="mes-hint"><oj-bind-text value="[[o.data.count]]"></oj-bind-text></span>
+              <oj-bind-if test="[[o.data.draft]]"><oj-button chroming="outlined" data-act="char-add" :data-seq="[[o.data.seq]]">Add item</oj-button></oj-bind-if></div>
+          </div>
+          <oj-bind-if test="[[o.data.bomHtml]]"><div class="oj-typography-body-sm" style="padding:10px 16px 0" data-bind="html: o.data.bomHtml"></div></oj-bind-if>
+          <div class="mes-card-bd flush" style="padding-top:8px">
+            <oj-bind-if test="[[o.data.hasChars]]">
+              <oj-table class="mes-table" :aria-label="[[o.data.name]]" data="[[o.data.t.dp]]" columns="[[o.data.t.columns]]">
+                <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table>
+            </oj-bind-if>
+            <oj-bind-if test="[[!o.data.hasChars]]"><div class="mes-empty">No plan items on this operation.</div></oj-bind-if>
+          </div>
+        </section>
+      </template>
+    </oj-bind-for-each>
+
+    <oj-dialog id="charDialog" dialog-title="[[cf.title]]" cancel-behavior="icon" class="mes-dialog wide">
+      <div slot="body">
+        <oj-form-layout max-columns="2" direction="row">
+          <oj-select-single label-hint="Type" data="[[typeDP]]" value="{{cf.type}}" disabled="[[cf.editing]]"></oj-select-single>
+          <oj-bind-if test="[[cf.type() === 'serial']]">
+            <oj-select-single label-hint="Serialized BOM component at this operation" data="[[cf.lineDP]]" value="{{cf.line}}"></oj-select-single>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() !== 'serial']]">
+            <oj-input-text id="cfName" label-hint="[[cf.type() === 'check' ? 'Checklist question' : cf.type() === 'signoff' ? 'Sign-off label' : 'Characteristic name']]" value="{{cf.name}}" required></oj-input-text>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.isNumeric()]]">
+            <oj-input-text label-hint="Unit" value="{{cf.unit}}" placeholder="mm, N·m, kPa"></oj-input-text>
+            <oj-input-text label-hint="Decimals" value="{{cf.dec}}"></oj-input-text>
+            <oj-input-text label-hint="Lower limit (LSL)" value="{{cf.lsl}}"></oj-input-text>
+            <oj-input-text label-hint="Upper limit (USL)" value="{{cf.usl}}"></oj-input-text>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() === 'measure']]">
+            <oj-input-text label-hint="Nominal" value="{{cf.nominal}}"></oj-input-text>
+            <oj-input-text label-hint="Gauge / equipment" value="{{cf.gauge}}"></oj-input-text>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() === 'calc']]">
+            <oj-input-text label-hint="Formula" value="{{cf.formula}}" raw-value="{{cf.formulaRaw}}" messages-custom="[[cf.formulaMsg]]" placeholder="e.g. max(C1,C2) - min(C1,C2)" colspan="2" help-hints.definition="[[cf.inputs]]"></oj-input-text>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() === 'signoff']]">
+            <oj-select-single label-hint="Signing role" data="[[roleDP]]" value="{{cf.role}}"></oj-select-single>
+            <oj-select-single label-hint="Signature meaning" data="[[meaningDP]]" value="{{cf.meaning}}"></oj-select-single>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() !== 'signoff']]">
+            <oj-select-single label-hint="Severity if nonconforming" data="[[sevDP]]" value="{{cf.sev}}"></oj-select-single>
+            <oj-select-single label-hint="Defect category" data="[[catDP]]" value="{{cf.cat}}"></oj-select-single>
+          </oj-bind-if>
+          <oj-bind-if test="[[cf.type() === 'check']]">
+            <oj-select-single label-hint="When" data="[[phaseDP]]" value="{{cf.phase}}"></oj-select-single>
+          </oj-bind-if>
+        </oj-form-layout>
+        <oj-bind-if test="[[cf.type() === 'calc']]"><div class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[cf.inputs]]"></oj-bind-text></div></oj-bind-if>
+        <div class="oj-typography-body-sm oj-text-color-secondary" style="margin-top:8px">Major and Critical nonconformances put the unit on quality hold automatically.</div>
+        <oj-bind-if test="[[cf.error()]]"><div class="mes-inline-error" role="alert" style="margin-top:8px"><oj-bind-text value="[[cf.error]]"></oj-bind-text></div></oj-bind-if>
+      </div>
+      <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[cf.close]]">Cancel</oj-button><oj-button chroming="callToAction" on-oj-action="[[cf.save]]"><oj-bind-text value="[[cf.editing() ? 'Save changes' : 'Add to plan']]"></oj-bind-text></oj-button></div>
+    </oj-dialog>
+  </oj-bind-if>
+</div>

@@ -1,0 +1,57 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Discrepancy not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/drs">Discrepancies</a> / <oj-bind-text value="[[id]]"></oj-bind-text></div>
+    <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg"><oj-bind-text value="[[title]]"></oj-bind-text></h1><div class="mes-sub" data-bind="html: chipsHtml"></div></div></div>
+    <section class="mes-card"><div class="mes-card-bd"><oj-train steps="[[steps]]" selected-step="[[selectedStep]]" aria-label="Discrepancy workflow" class="oj-train-stretch" on-oj-before-select="[[function(e){ e.preventDefault(); }]]"></oj-train></div></section>
+    <div class="mes-grid mes-g-main">
+      <div class="mes-stack">
+        <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Details</h2></div><div class="mes-card-bd" data-bind="html: detailsHtml"></div></section>
+        <oj-bind-if test="[[hasReadings]]">
+          <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[readingsTitle]]"></oj-bind-text></h2></div>
+            <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Readings" data="[[readings.dp]]" columns="[[readings.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+        </oj-bind-if>
+        <oj-bind-if test="[[hasWhereUsed]]">
+          <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[wuTitle]]"></oj-bind-text></h2><span class="mes-hint"><oj-bind-text value="[[wuHint]]"></oj-bind-text></span></div>
+            <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Where used" data="[[wu.dp]]" columns="[[wu.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template><template slot="noData"><div class="mes-empty">Not installed anywhere. Containment is limited to stock.</div></template></oj-table></div></section>
+        </oj-bind-if>
+      </div>
+      <div class="mes-stack">
+        <oj-bind-if test="[[isOpen]]">
+          <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">MRB disposition</h2></div>
+            <div class="mes-card-bd mes-stack" style="gap:8px">
+              <oj-bind-if test="[[notQE]]"><div class="mes-banner warn"><div class="tx">Only a Quality Engineer can disposition. The signature dialog lists eligible signers.</div></div></oj-bind-if>
+              <oj-form-layout max-columns="1">
+                <oj-select-single label-hint="Disposition" data="[[dispDP]]" value="{{f.disposition}}" required></oj-select-single>
+                <oj-text-area label-hint="Root cause" value="{{f.rootCause}}" rows="2" required placeholder="Why did this happen?"></oj-text-area>
+                <oj-text-area label-hint="Containment" value="{{f.containment}}" rows="2" placeholder="What else could be affected; what was checked"></oj-text-area>
+                <oj-text-area label-hint="Corrective action" value="{{f.correctiveAction}}" rows="2" placeholder="Permanent fix to prevent recurrence"></oj-text-area>
+              </oj-form-layout>
+              <div class="oj-typography-body-xs oj-text-color-secondary">Rework / Repair releases the hold so the station can re-inspect, then requires verification. Use As Is, Scrap and Return to Vendor close on signature.</div>
+              <div class="mes-row"><oj-button chroming="callToAction" on-oj-action="[[signDisposition]]">Sign disposition</oj-button><oj-button chroming="outlined" on-oj-action="[[cancelDr]]">Cancel DR</oj-button></div>
+            </div></section>
+        </oj-bind-if>
+        <oj-bind-if test="[[isRework]]">
+          <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Rework / repair in progress</h2></div>
+            <div class="mes-card-bd mes-stack" style="gap:8px">
+              <div><oj-bind-text value="[[reworkHint]]"></oj-bind-text> <oj-bind-if test="[[reworkHref]]"><a class="oj-link" :href="[[reworkHref]]">Open station</a></oj-bind-if></div>
+              <oj-text-area label-hint="Rework record" value="{{f.rework}}" rows="2" placeholder="What was done, parts replaced"></oj-text-area>
+              <div><oj-button chroming="callToAction" on-oj-action="[[reworkDone]]">Record rework complete</oj-button></div>
+            </div></section>
+        </oj-bind-if>
+        <oj-bind-if test="[[isPV]]">
+          <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Verification</h2></div>
+            <div class="mes-card-bd mes-stack" style="gap:8px"><div>Rework is complete. A Quality Engineer verifies the result and closes the discrepancy.</div><div><oj-button chroming="callToAction" on-oj-action="[[verify]]">Verify &amp; close</oj-button></div></div></section>
+        </oj-bind-if>
+        <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">History</h2></div>
+          <div class="mes-card-bd flush" data-bind="html: historyHtml"></div>
+          <div class="mes-card-bd mes-row" style="border-top:1px solid var(--mes-line);align-items:flex-end">
+            <oj-input-text label-hint="Note" value="{{f.note}}" placeholder="Add a note to the record" style="flex:1;min-width:180px"></oj-input-text>
+            <oj-button chroming="outlined" on-oj-action="[[addNote]]">Add note</oj-button>
+          </div>
+        </section>
+        <oj-bind-if test="[[hasSigs]]"><section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">E-signatures</h2></div><div class="mes-card-bd mes-stack" style="gap:8px" data-bind="html: sigsHtml"></div></section></oj-bind-if>
+      </div>
+    </div>
+  </oj-bind-if>
+</div>

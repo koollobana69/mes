@@ -1,0 +1,32 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Unit not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/genealogy">Genealogy</a> / <oj-bind-text value="[[serial]]"></oj-bind-text></div>
+    <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg"><span class="mes-mono"><oj-bind-text value="[[serial]]"></oj-bind-text></span> <span data-bind="html: stateHtml"></span></h1><div class="mes-sub" data-bind="html: subHtml"></div></div>
+      <div class="mes-acts"><a class="oj-link" :href="[[treeHref]]" style="align-self:center">Genealogy tree</a><oj-bind-if test="[[stationHref]]"><a class="oj-link" :href="[[stationHref]]" style="align-self:center">Open at station</a></oj-bind-if></div></div>
+    <div class="mes-opbar"><oj-bind-for-each data="[[opbar]]"><template data-oj-as="b"><div :class="[[b.data.cls]]" :title="[[b.data.title]]"><oj-bind-text value="[[b.data.label]]"></oj-bind-text></div></template></oj-bind-for-each></div>
+    <div class="mes-grid mes-g-main">
+      <section class="mes-card">
+        <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Operations</h2><span class="mes-hint"><oj-bind-text value="[[opsHint]]"></oj-bind-text></span><div class="mes-acts"><oj-button chroming="borderless" on-oj-action="[[toggleAll]]"><oj-bind-text value="[[expandAll() ? 'Collapse all' : 'Expand all']]"></oj-bind-text></oj-button></div></div>
+        <div class="mes-card-bd">
+          <oj-bind-for-each data="[[ops]]">
+            <template data-oj-as="o">
+              <oj-collapsible class="mes-op" expanded="[[o.data.expanded]]">
+                <div slot="header" class="mes-row" style="gap:8px"><b><oj-bind-text value="[[o.data.title]]"></oj-bind-text></b><span data-bind="html: o.data.chip"></span><span class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[o.data.meta]]"></oj-bind-text></span></div>
+                <div>
+                  <oj-bind-if test="[[o.data.hasChars]]"><oj-table class="mes-table" :aria-label="[[o.data.title]]" data="[[o.data.t.dp]]" columns="[[o.data.t.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></oj-bind-if>
+                  <oj-bind-if test="[[o.data.lotsHtml]]"><div class="oj-typography-body-sm" style="padding:8px 0" data-bind="html: o.data.lotsHtml"></div></oj-bind-if>
+                </div>
+              </oj-collapsible>
+            </template>
+          </oj-bind-for-each>
+        </div>
+      </section>
+      <div class="mes-stack">
+        <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Unit</h2></div><div class="mes-card-bd" data-bind="html: infoHtml"></div></section>
+        <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[compsTitle]]"></oj-bind-text></h2></div><div class="mes-card-bd flush" data-bind="html: compsHtml"></div></section>
+        <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[drsTitle]]"></oj-bind-text></h2></div><div class="mes-card-bd flush" data-bind="html: drsHtml"></div></section>
+      </div>
+    </div>
+  </oj-bind-if>
+</div>

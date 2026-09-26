@@ -1,0 +1,14 @@
+<div class="mes-view">
+  <div class="mes-crumbs"><a class="oj-link" href="#/genealogy">Genealogy</a> / <oj-bind-text value="[[serial]]"></oj-bind-text></div>
+  <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg mes-mono"><oj-bind-text value="[[title]]"></oj-bind-text></h1><div class="mes-sub"><oj-bind-text value="[[sub]]"></oj-bind-text></div></div>
+    <div class="mes-acts"><a class="oj-link" :href="[[recordHref]]">As-built record</a></div></div>
+  <div class="mes-grid mes-g-main">
+    <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Component tree</h2><span class="mes-hint">Expand assemblies and lot groups; select any node for details.</span></div>
+      <div class="mes-card-bd">
+        <oj-tree-view id="genTree" data="[[treeDP]]" expanded="[[expanded]]" selection-mode="single" current-item="[[current]]" on-current-item-changed="[[currentChanged]]" aria-label="Component tree">
+          <template slot="itemTemplate" data-oj-as="n"><span data-bind="html: n.data.html"></span></template>
+        </oj-tree-view>
+      </div></section>
+    <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs mes-mono"><oj-bind-text value="[[detailTitle]]"></oj-bind-text></h2></div><div class="mes-card-bd" data-bind="html: detailHtml"></div></section>
+  </div>
+</div>

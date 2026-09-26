@@ -1,0 +1,12 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Materials</div><h1 class="oj-typography-heading-lg">Material Movements</h1>
+    <div class="mes-sub">Ledger of receipts, transfers, installs, backflush consumption, production receipts, scrap and returns.</div></div></div>
+  <section class="mes-card">
+    <div class="mes-card-bd mes-row" style="align-items:flex-end">
+      <oj-select-single label-hint="Type" data="[[typeDP]]" value="{{type}}" style="max-width:260px"></oj-select-single>
+      <oj-input-text label-hint="Search" value="{{q}}" placeholder="Part, serial, lot, location" clear-icon="conditional" style="max-width:300px"></oj-input-text>
+      <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[t().note]]"></oj-bind-text></span>
+    </div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table tall" aria-label="Movements" data="[[t().dp]]" columns="[[t().columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div>
+  </section>
+</div>

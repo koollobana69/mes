@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-/* Headless smoke test: seeds the plant, renders every view, and drives the core MES/QMS workflows
-   through the engine. Run: node tools/smoke-test.js */
+/* Headless engine test: seeds the plant and drives the core MES/QMS workflows through the domain engine.
+   (The Oracle JET UI is exercised separately by tools/ui-test.js in a real browser.) Run: node tools/smoke-test.js */
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -17,9 +17,16 @@ const ctx = {
   location: { hash: '' }, history: { pushState: noop, replaceState: noop },
 };
 vm.createContext(ctx);
-const files = ['util', 'master', 'engine', 'seed', 'ui', 'views-prod', 'views-quality', 'views-trace'];
-vm.runInContext(files.map(f => fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8')).join('\n;\n') + '\n;this.__ = { MES, SEED, V, U, Formula, get DB() { return DB; } };', ctx);
-const { MES, SEED, V, U, Formula } = ctx.__;
+const files = ['util', 'master', 'engine', 'seed'];
+vm.runInContext(files.map(f => fs.readFileSync(path.join(root, 'js', f + '.js'), 'utf8')).join('\n;\n') + '\n;this.__ = { MES, SEED, U, Formula, get DB() { return DB; } };', ctx);
+const { MES, SEED, U, Formula } = ctx.__;
+const fakeSerial = (pattern, n) => { // build a serial that satisfies a part's mask, e.g. ^IC\d{8}$
+  let out = pattern.replace(/^\^|\$$/g, '');
+  out = out.replace(/\\d\{(\d+)\}/g, (m, k) => String(n).padStart(Number(k), '9'));
+  out = out.replace(/\[0-9A-F\]\{(\d+)\}/g, (m, k) => 'F'.repeat(Number(k)));
+  out = out.replace(/\[A-Z\]/g, 'Z');
+  return out.replace(/\\/g, '');
+};
 const db = () => ctx.__.DB;
 
 let pass = 0, fail = 0;
@@ -45,17 +52,10 @@ ok(Formula.evaluate('(max(C1,C2,C3,C4) - min(C1,C2,C3,C4)) / max(C1,C2,C3,C4) * 
 ok(Formula.evaluate('abs(C2 - C3)', { C2: 1.2, C3: 0.9 }).toFixed(2) === '0.30', 'abs delta');
 let threw = false; try { Formula.parse('C1 +'); } catch (e) { threw = true; } ok(threw, 'rejects bad formula');
 
-section('Render every view');
-const routes = [['dashboard'], ['jobs'], ['job', 'WO-26-0414'], ['dispatch'], ['station'], ['plans'], ['drs'], ['holds'], ['tests'], ['inspections'], ['inventory'], ['moves'], ['genealogy'], ['genealogy', 'L260902-118'], ['items'], ['item', 'ENG-24T'], ['people'], ['audit']];
-db().stations.forEach(s => routes.push(['station', s.id]));
-db().plans.forEach(p => routes.push(['plan', p.id]));
-db().drs.forEach(d => routes.push(['dr', d.id]));
-db().tests.slice(0, 5).forEach(t => routes.push(['test', t.id]));
-db().units.forEach(u => { routes.push(['unit', u.serial]); routes.push(['genealogy', u.serial]); });
-routes.forEach(([r, ...args]) => {
-  try { const h = V[r](...args); ok(typeof h === 'string' && h.length > 100, 'view ' + r + ' ' + args.join('/')); }
-  catch (e) { ok(false, 'view ' + r + ' ' + args.join('/') + ' threw ' + e.stack.split('\n').slice(0, 2).join(' ')); }
-});
+section('Long routing');
+ok(MES.routing('VEH-T1').length >= 25, 'vehicle routing has 25+ operations (' + MES.routing('VEH-T1').length + ')');
+ok(MES.planIssues(MES.activePlan('VEH-T1')).filter(i => i.level === 'error').length === 0, 'vehicle plan covers every serialized BOM part');
+ok(['Seat LH', 'Seat RH', 'Instrument Cluster', 'Head Unit', 'Steering Column', 'Front Radar'].every(sl => veh.components.some(c => c.slot === sl)), 'completed vehicle has seats, cluster, head unit, steering column and radar serials');
 
 section('Station workflow: build an engine end to end');
 const job = MES.job('WO-26-0413');
@@ -67,7 +67,12 @@ const supply = (partId, ls) => {
   let rec = db().inv.find(i => i.partId === partId && i.location === ls && i.status === 'Available' && !MES.invHeld(i));
   if (!rec) {
     rec = db().inv.find(i => i.partId === partId && i.status === 'Available' && !MES.invHeld(i) && i.location !== ls && MES.loc(i.location));
-    if (!rec) { const s = { 'EB-4001': 'EB26099901', 'CK-4101': 'CK-Z999901', 'CH-4301': 'CH9999901', 'TC-4401': 'TT49999901', 'EC-4501': 'ECU-DEADBEEF' }[partId]; MES.receive({ partId, serials: [s], to: 'B40-RCV', by: 'U201' }); rec = db().inv.find(i => i.serial === s); }
+    if (!rec) {
+      const part = MES.part(partId); if (part.type === 'Assembly') return null;
+      let s, n = 1; do { s = fakeSerial(part.pattern, n++); } while (db().inv.find(i => i.serial === s));
+      const rr = MES.receive({ partId, serials: [s], to: 'B40-RCV', by: 'U201' }); if (!rr.ok) console.log('  receive failed', rr.msg);
+      rec = db().inv.find(i => i.serial === s);
+    }
     MES.transfer(rec.id, 1, ls, 'U201', 'test');
   }
   return rec.serial;
@@ -120,6 +125,24 @@ for (let i = 0; i < 6; i++) runOp(eng);
 ok(eng.status === 'Complete', 'engine complete');
 ok(db().tests.filter(t => t.serial === eng.serial).length === 2, 'two engine test records');
 ok(db().inv.some(i => i.serial === eng.serial && i.location === 'B20-FG'), 'engine received to dispatch dock');
+
+section('Build a vehicle through the full 29-operation routing');
+{
+  MES.job('WO-26-0414').qty += 2;
+  const lv = MES.launchUnit('WO-26-0414', 'U401');
+  ok(lv.ok, 'launch vehicle: ' + lv.msg);
+  // make sure a released body is available for OP10
+  if (!db().inv.some(i => i.partId === 'BIW-T1' && i.status === 'Available' && MES.unit(i.serial) && MES.unit(i.serial).status === 'Complete' && !MES.unitHeld(i.serial) && !db().drs.some(d => d.serial === i.serial && MES.DR_OPEN.includes(d.status)))) {
+    MES.job('WO-26-0412').qty += 1; const b = MES.launchUnit('WO-26-0412', 'U402').unit; for (let i = 0; i < 6; i++) runOp(b);
+  }
+  const v = lv.unit;
+  for (let i = 0; i < MES.routing('VEH-T1').length && v.status !== 'Complete'; i++) runOp(v);
+  ok(v.status === 'Complete', 'vehicle released after ' + MES.routing('VEH-T1').length + ' operations');
+  const serialLines = db().boms['VEH-T1'].filter(b => MES.part(b.partId).tracking === 'Serial').length;
+  ok(v.components.length === serialLines, 'vehicle genealogy has all ' + serialLines + ' serialized positions (got ' + v.components.length + ')');
+  ok(db().tests.filter(t => t.serial === v.serial).length === 4, 'four vehicle test records (alignment, roll & brake, ADAS, water)');
+  ok(v.consumed.some(c => c.partId === 'LP-8601') && v.consumed.some(c => c.partId === 'TI-8611'), 'lighting and indicator lots backflushed');
+}
 
 section('Nonconformance: out-of-tolerance → DR → hold → MRB → rework → verify');
 r = MES.launchUnit('WO-26-0412', 'U402'); const body = r.unit;
@@ -195,9 +218,6 @@ section('Persistence');
 MES.save();
 const raw = ctx.localStorage.getItem('ridgeline-mes-v1');
 ok(raw && JSON.parse(raw).units.length === db().units.length, 'state saved to localStorage (' + Math.round(raw.length / 1024) + ' KB)');
-
-section('Views after workflows');
-['dashboard', 'dispatch', 'plans', 'drs', 'holds', 'inventory'].forEach(v => { try { V[v](); ok(true); } catch (e) { ok(false, v + ' ' + e.message); } });
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -1,0 +1,18 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Quality</div><h1 class="oj-typography-heading-lg">Quality Holds</h1>
+    <div class="mes-sub">Held units cannot be worked, held serials cannot be installed, and held lots are skipped by backflush and blocked from line-side moves.</div></div>
+    <div class="mes-acts"><oj-button chroming="danger" on-oj-action="[[openNew]]">Place hold</oj-button></div></div>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[activeTitle]]"></oj-bind-text></h2></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Active holds" data="[[active.dp]]" columns="[[active.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template><template slot="noData"><div class="mes-empty">No active holds.</div></template></oj-table></div></section>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Released holds</h2></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Released holds" data="[[released.dp]]" columns="[[released.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+  <oj-dialog id="holdDialog" dialog-title="Place quality hold" cancel-behavior="icon" class="mes-dialog">
+    <div slot="body"><oj-form-layout max-columns="1">
+      <oj-select-single label-hint="Hold type" data="[[typeDP]]" value="{{nh.type}}"></oj-select-single>
+      <oj-input-text label-hint="Serial / VIN / lot" value="{{nh.target}}" required></oj-input-text>
+      <oj-text-area label-hint="Reason" value="{{nh.reason}}" rows="3" required></oj-text-area>
+    </oj-form-layout>
+    <oj-bind-if test="[[nh.error()]]"><div class="mes-inline-error" role="alert"><oj-bind-text value="[[nh.error]]"></oj-bind-text></div></oj-bind-if></div>
+    <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeNew]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[place]]">Place hold</oj-button></div>
+  </oj-dialog>
+</div>

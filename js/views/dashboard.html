@@ -1,0 +1,107 @@
+<div class="mes-view">
+  <div class="mes-ph">
+    <div>
+      <div class="mes-eyebrow"><oj-bind-text value="[[plant]]"></oj-bind-text></div>
+      <h1 class="oj-typography-heading-lg">Plant Dashboard</h1>
+      <div class="mes-sub">Live view of three production jobs across Buildings 10, 20 and 30.</div>
+    </div>
+    <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[openStation]]">Open station terminal</oj-button></div>
+  </div>
+
+  <div class="mes-kpis">
+    <oj-bind-for-each data="[[kpis]]">
+      <template data-oj-as="k">
+        <div :class="[['mes-kpi' + (k.data.alert ? ' alert' : '')]]">
+          <span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span>
+          <span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span>
+          <span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span>
+        </div>
+      </template>
+    </oj-bind-for-each>
+  </div>
+
+  <section class="mes-card">
+    <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Line status</h2><span class="mes-hint">Each tile is a routing operation. Select a tile to open its station terminal.</span></div>
+    <div class="mes-card-bd">
+      <oj-bind-for-each data="[[lines]]">
+        <template data-oj-as="l">
+          <div class="mes-line">
+            <div class="mes-line-hd">
+              <h3 class="oj-typography-subheading-xs"><a class="oj-link" :href="[['#/job/' + l.data.id]]"><oj-bind-text value="[[l.data.id]]"></oj-bind-text></a> · <oj-bind-text value="[[l.data.title]]"></oj-bind-text></h3>
+              <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[l.data.building]]"></oj-bind-text></span>
+              <span class="right"><oj-bind-text value="[[l.data.summary]]"></oj-bind-text></span>
+            </div>
+            <div class="mes-progress" :title="[[l.data.summary]]"><span class="done" :style.width="[[l.data.doneW]]"></span><span class="wip" :style.width="[[l.data.wipW]]"></span></div>
+            <oj-bind-for-each data="[[l.data.zones]]">
+              <template data-oj-as="z">
+                <oj-bind-if test="[[z.data.zone]]"><div class="mes-zone-label"><oj-bind-text value="[[z.data.zone]]"></oj-bind-text></div></oj-bind-if>
+                <div class="mes-stations">
+                  <oj-bind-for-each data="[[z.data.tiles]]">
+                    <template data-oj-as="t">
+                      <a :class="[[t.data.cls]]" :href="[[t.data.href]]" :title="[[t.data.tip]]">
+                        <span class="op"><oj-bind-text value="[[t.data.op]]"></oj-bind-text></span>
+                        <span class="nm"><oj-bind-text value="[[t.data.name]]"></oj-bind-text></span>
+                        <span class="u"><oj-bind-text value="[[t.data.unit]]"></oj-bind-text></span>
+                        <span class="q"><oj-bind-text value="[[t.data.queue]]"></oj-bind-text></span>
+                      </a>
+                    </template>
+                  </oj-bind-for-each>
+                </div>
+              </template>
+            </oj-bind-for-each>
+          </div>
+        </template>
+      </oj-bind-for-each>
+    </div>
+  </section>
+
+  <div class="mes-grid mes-g-main">
+    <section class="mes-card">
+      <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Completed units per day</h2><span class="mes-hint">Last 10 days</span></div>
+      <div class="mes-card-bd">
+        <oj-chart id="outputChart" type="bar" data="[[outputDP]]" animation-on-display="auto" legend.position="top" legend.rendered="on"
+                  y-axis.title="Units" style-defaults.bar-gap-ratio="0.35" hover-behavior="dim" style="height:260px;width:100%">
+          <template slot="itemTemplate" data-oj-as="item">
+            <oj-chart-item value="[[item.data.value]]" group-id="[[ [item.data.group] ]]" series-id="[[item.data.series]]" color="[[item.data.color]]"></oj-chart-item>
+          </template>
+        </oj-chart>
+      </div>
+    </section>
+    <section class="mes-card">
+      <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Quality at a glance</h2></div>
+      <div class="mes-card-bd mes-row" style="justify-content:space-around">
+        <div style="text-align:center">
+          <oj-status-meter-gauge orientation="circular" min="0" max="100" value="[[fpyValue]]" readonly metric-label.rendered="on" metric-label.text="[[fpyValue + '%']]"
+            thresholds='[{"max":80,"color":"#c74634"},{"max":95,"color":"#ac630c"},{"color":"#508223"}]' style="width:130px;height:130px" aria-label="Vehicle first-pass yield"></oj-status-meter-gauge>
+          <div class="oj-typography-body-sm oj-text-color-secondary">Vehicle first-pass yield</div>
+        </div>
+        <div style="text-align:center">
+          <oj-status-meter-gauge orientation="circular" min="0" max="100" value="[[fptValue]]" readonly metric-label.rendered="on" metric-label.text="[[fptValue + '%']]"
+            thresholds='[{"max":80,"color":"#c74634"},{"max":95,"color":"#ac630c"},{"color":"#508223"}]' style="width:130px;height:130px" aria-label="Test first-pass rate"></oj-status-meter-gauge>
+          <div class="oj-typography-body-sm oj-text-color-secondary">Test first-pass, 7 days</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="mes-grid mes-g3">
+    <section class="mes-card">
+      <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Discrepancies by category</h2></div>
+      <div class="mes-card-bd">
+        <oj-chart type="bar" orientation="horizontal" data="[[paretoDP]]" legend.rendered="off" style="height:260px;width:100%" aria-label="Discrepancies by category">
+          <template slot="itemTemplate" data-oj-as="item">
+            <oj-chart-item value="[[item.data.value]]" group-id="[[ [item.data.group] ]]" series-id="Discrepancies" color="#2a78d6"></oj-chart-item>
+          </template>
+        </oj-chart>
+      </div>
+    </section>
+    <section class="mes-card">
+      <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Needs attention</h2><span class="mes-hint"><oj-bind-text value="[[attnCount]]"></oj-bind-text></span></div>
+      <div class="mes-card-bd flush" data-bind="html: attnHtml"></div>
+    </section>
+    <section class="mes-card">
+      <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Recent shop-floor activity</h2><div class="mes-acts"><a class="oj-link" href="#/audit">Audit trail</a></div></div>
+      <div class="mes-card-bd flush" data-bind="html: feedHtml"></div>
+    </section>
+  </div>
+</div>

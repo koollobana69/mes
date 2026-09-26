@@ -1,0 +1,26 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Quality</div><h1 class="oj-typography-heading-lg">Quality Plans</h1>
+    <div class="mes-sub">One quality plan per assembly item number. Each plan ties routing operations to checklists, serial validation, measurements, calculations and sign-offs. Released revisions are locked; changes go through a new revision and a Quality Engineer e-signature.</div></div></div>
+  <div class="mes-banner info"><div class="tx"><b>How it runs on the floor:</b> each unit is locked to the plan revision that was released when it launched. At every station the terminal renders that operation's plan items. Out-of-tolerance readings, failed checks and rejected scans raise discrepancies automatically.</div></div>
+  <oj-bind-for-each data="[[items]]">
+    <template data-oj-as="it">
+      <section class="mes-card">
+        <div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[it.data.title]]"></oj-bind-text></h2><span class="mes-hint"><oj-bind-text value="[[it.data.hint]]"></oj-bind-text></span>
+          <div class="mes-acts">
+            <oj-bind-if test="[[it.data.draftHref]]"><a class="oj-link" :href="[[it.data.draftHref]]"><oj-bind-text value="[[it.data.draftLabel]]"></oj-bind-text></a></oj-bind-if>
+            <oj-bind-if test="[[!it.data.draftHref]]"><oj-button chroming="callToAction" data-act="plan-new" :data-item="[[it.data.id]]"><oj-bind-text value="[[it.data.newLabel]]"></oj-bind-text></oj-button></oj-bind-if>
+          </div></div>
+        <div class="mes-card-bd flush"><oj-table class="mes-table" :aria-label="[[it.data.title]]" data="[[it.data.t.dp]]" columns="[[it.data.t.columns]]" on-oj-row-action="[[it.data.rowAction]]">
+          <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template>
+          <template slot="noData"><div class="mes-empty">No quality plan yet.</div></template></oj-table></div>
+      </section>
+    </template>
+  </oj-bind-for-each>
+  <oj-dialog id="newPlanDialog" dialog-title="New quality plan revision" cancel-behavior="icon" class="mes-dialog">
+    <div slot="body"><div class="mes-dialog-body">
+      <div>Create a draft revision for <b class="mes-mono"><oj-bind-text value="[[newItem]]"></oj-bind-text></b>.</div>
+      <oj-bind-if test="[[newHasPlans]]"><oj-select-single label-hint="Start from" data="[[modeDP]]" value="{{newMode}}"></oj-select-single></oj-bind-if>
+    </div></div>
+    <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeNew]]">Cancel</oj-button><oj-button chroming="callToAction" on-oj-action="[[createDraft]]">Create draft</oj-button></div>
+  </oj-dialog>
+</div>
