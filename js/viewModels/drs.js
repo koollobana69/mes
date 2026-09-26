@@ -8,15 +8,15 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     const f = app.st('drs', { status: 'active', sev: '', src: '', q: '' });
     const cnt = s => DB.drs.filter(d => d.status === s).length;
     this.kpis = [
-      { lbl: 'Awaiting MRB', val: cnt('Open'), foot: 'Open, no disposition', alert: cnt('Open') > 0 },
-      { lbl: 'In rework / repair', val: cnt('Rework'), foot: 'Dispositioned, work pending' },
-      { lbl: 'Pending verification', val: cnt('Pending Verification'), foot: 'Awaiting QE close-out' },
-      { lbl: 'Closed', val: cnt('Closed'), foot: cnt('Cancelled') + ' cancelled' },
+      { icon: ui.icon('alert'), tone: 'bad', lbl: 'Awaiting MRB', val: cnt('Open'), foot: 'Open, no disposition', alert: cnt('Open') > 0 },
+      { icon: ui.icon('flag'), tone: 'warn', lbl: 'In rework / repair', val: cnt('Rework'), foot: 'Dispositioned, work pending' },
+      { icon: ui.icon('sig'), tone: 'info', lbl: 'Pending verification', val: cnt('Pending Verification'), foot: 'Awaiting QE close-out' },
+      { icon: ui.icon('check'), tone: 'ok', lbl: 'Closed', val: cnt('Closed'), foot: cnt('Cancelled') + ' cancelled' },
     ];
     this.statusDP = ui.optionsDP([{ value: 'active', label: 'Open items' }, { value: 'all', label: 'All' }, { value: 'closed', label: 'Closed / cancelled' }]);
-    this.sevDP = ui.optionsDP([{ value: '', label: 'All severities' }, 'Minor', 'Major', 'Critical']);
-    this.srcDP = ui.optionsDP([{ value: '', label: 'All sources' }].concat([...new Set(DB.drs.map(d => d.source))]));
-    this.status = ko.observable(f.status); this.sev = ko.observable(f.sev); this.src = ko.observable(f.src); this.q = ko.observable(f.q);
+    this.sevDP = ui.optionsDP([{ value: '*', label: 'All severities' }, 'Minor', 'Major', 'Critical']);
+    this.srcDP = ui.optionsDP([{ value: '*', label: 'All sources' }].concat([...new Set(DB.drs.map(d => d.source))]));
+    this.status = ko.observable(f.status); this.sev = ko.observable(f.sev); this.sevSel = ui.allSel(this.sev); this.src = ko.observable(f.src); this.srcSel = ui.allSel(this.src); this.q = ko.observable(f.q);
     const filtered = () => {
       let l = DB.drs.slice().reverse();
       const s = this.status();
@@ -34,8 +34,8 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       { h: 'Discrepancy', v: d => '<b>' + E(d.title) + '</b><div class="oj-typography-body-xs oj-text-color-secondary">' + E(d.source) + ' · ' + E(d.category) + '</div>' },
       { h: 'Unit / material', v: d => d.serial ? '<span class="mes-mono">' + E(d.serial) + '</span>' + (d.seq ? '<div class="oj-typography-body-xs oj-text-color-secondary">OP' + d.seq + ' ' + E((MES.op(d.itemId, d.seq) || {}).name || '') + '</div>' : '') : '<span class="mes-mono">' + E(d.partId || '') + '</span><div class="oj-typography-body-xs oj-text-color-secondary mes-mono">' + E(d.compSerial || (d.lot ? 'lot ' + d.lot : '')) + '</div>' },
       { h: 'Disposition', v: d => d.disposition ? E(d.disposition) : '—' },
-      { h: 'Opened', v: d => U.fmtDT(d.createdAt) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(d.createdBy)) + '</div>' },
-      { h: 'Age', v: d => d.closedAt ? U.dur(d.closedAt - d.createdAt) : U.ago(d.createdAt).replace(' ago', '') },
+      { h: 'Opened', v: d => ui.dt(d.createdAt) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(d.createdBy)) + '</div>' },
+      { h: 'Age', v: d => ui.nw(d.closedAt ? U.dur(d.closedAt - d.createdAt) : U.ago(d.createdAt).replace(' ago', '')) },
     ], filtered(), { rowGo: d => 'dr/' + d.id }));
     this.countText = ko.pureComputed(() => this.t().count + ' discrepancies');
 

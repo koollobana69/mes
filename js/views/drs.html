@@ -4,16 +4,17 @@
     <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[openNew]]">New discrepancy</oj-button></div></div>
   <div class="mes-kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
     <oj-bind-for-each data="[[kpis]]"><template data-oj-as="k">
-      <div :class="[['mes-kpi' + (k.data.alert ? ' alert' : '')]]"><span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span><span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span><span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span></div>
+      <div :class="[['mes-kpi tone-' + (k.data.tone || 'info') + (k.data.alert ? ' alert' : '')]]">
+          <div class="kpi-top"><span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span><span class="kpi-ic" data-bind="html: k.data.icon || ''"></span></div><span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span><span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span></div>
     </template></oj-bind-for-each>
   </div>
   <section class="mes-card">
-    <div class="mes-card-bd mes-row" style="align-items:flex-end">
+    <div class="mes-toolbar">
       <oj-select-single label-hint="Status" data="[[statusDP]]" value="{{status}}" style="max-width:220px"></oj-select-single>
-      <oj-select-single label-hint="Severity" data="[[sevDP]]" value="{{sev}}" style="max-width:200px"></oj-select-single>
-      <oj-select-single label-hint="Source" data="[[srcDP]]" value="{{src}}" style="max-width:240px"></oj-select-single>
+      <oj-select-single label-hint="Severity" data="[[sevDP]]" value="{{sevSel}}" style="max-width:200px"></oj-select-single>
+      <oj-select-single label-hint="Source" data="[[srcDP]]" value="{{srcSel}}" style="max-width:240px"></oj-select-single>
       <oj-input-text label-hint="Search" value="{{q}}" placeholder="DR, serial, lot, text" clear-icon="conditional" style="max-width:280px"></oj-input-text>
-      <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[countText]]"></oj-bind-text></span>
+      <span class="mes-count"><oj-bind-text value="[[countText]]"></oj-bind-text></span>
     </div>
     <div class="mes-card-bd flush">
       <oj-table class="mes-table" aria-label="Discrepancies" data="[[t().dp]]" columns="[[t().columns]]" on-oj-row-action="[[rowAction]]">

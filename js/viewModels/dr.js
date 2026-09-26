@@ -39,7 +39,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     if (this.hasReadings) {
       this.readingsTitle = 'Readings for ' + ch.code + ' ' + ch.name;
       this.readings = ui.table([
-        { h: 'When', v: r => U.fmtDT(r.at) },
+        { h: 'When', v: r => ui.dt(r.at) },
         { h: 'Value', v: r => '<span class="mes-mono">' + E(r.type === 'measure' || r.type === 'calc' ? U.num(r.value, ch.dec) + ' ' + ch.unit : r.value) + '</span>' },
         { h: 'Result', v: r => ui.badge(r.result) }, { h: 'By', v: r => E(MES.userName(r.by)) }, { h: 'Note', v: r => E(r.note) },
       ], MES.results(u.serial, d.seq, ch.id));

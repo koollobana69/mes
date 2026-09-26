@@ -41,17 +41,36 @@ To load JET from a different location (for example an internal CDN mirror of the
 
 ```bash
 npm test          # 346 headless engine checks, including a full 29-operation vehicle build
-npm run test:ui   # 37 browser checks against the real JET screens (needs Playwright + Chromium)
+npm run test:ui   # 43 browser checks against the real JET screens (needs Playwright + Chromium)
 ```
 
-`test:ui` starts its own server, then drives the UI: navigation, user switching, an out-of-tolerance reading
+`test:ui` starts its own server, then drives the UI: navigation, role-based menus and redirects, user switching, an out-of-tolerance reading
 with the live tolerance message, MRB disposition through the e-signature dialog (wrong PIN rejected),
 re-inspection, verify and close, sign-off, operation completion, adding a calculation to a draft quality
 plan, releasing the plan, and a render check of every screen.
 
-### Demo users
+### Demo users and role-based views
 
-Switch users with the selector in the header. **Every PIN is `1234`.**
+Switch users with the selector in the header; switching user signs that person in and opens their home
+screen. **Every PIN is `1234`.** The app opens as the supervisor, Linda Park, who sees everything.
+
+Everyone else sees only what their job needs. Their home screen is **My Work**, an inbox of things they can
+act on now, each with one action button:
+
+| Role | Navigation | My Work shows |
+| --- | --- | --- |
+| Operator | My Work, Station Terminal (their qualified stations only) | Units in progress and ready to start at their stations (not held, material at line-side, station free), and rework to re-inspect. Blocked units are summarised, not listed. |
+| Quality Technician | + Discrepancies, Test Records, Inspection Log | The above for test/inspection stations, plus *Verified* sign-offs waiting on them |
+| Material Handler | My Work, Dispatch, Inventory, Movements | Line-side shortages with the stock to pick and a one-click Move |
+| Quality Engineer | + Dashboard, Plans, Holds, Genealogy, Audit | DRs awaiting MRB or verification, *Approved* sign-offs, their draft plans |
+| Supervisor | Everything | Work at their stations plus all of the above |
+
+For operators the station terminal is decluttered:
+- No "recently completed" list and no traveler link.
+- The long operation strip becomes a progress line.
+- Lot material collapses to a one-line note unless something is short.
+- Plan items already done are hidden behind "Show completed items".
+- Sign-offs they can't give read "Waiting for Quality Engineer" instead of showing a button.
 
 | People | Role | Can do |
 | --- | --- | --- |
@@ -75,7 +94,8 @@ js/main.js                 RequireJS config (paths into ./libs) and ojbootstrap
 js/appController.js        routing (hash → oj-module via ModuleElementUtils), responsive drawer,
                            user context, toasts, e-signature and confirm services
 js/services/ui.js          shared helpers: Redwood badges, formatting, oj-table models
-js/viewModels/*.js         one Knockout view model per screen (22 screens)
+js/services/work.js        role-aware "My Work" rules: what each person can act on right now
+js/viewModels/*.js         one Knockout view model per screen (23 screens)
 js/views/*.html            matching JET views
 js/util.js, master.js,     domain layer (plain JS, no UI): formula engine and VIN check digit,
 js/engine.js, seed.js      master data, the MES/QMS engine with every business rule, and the seed simulation

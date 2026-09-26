@@ -4,11 +4,20 @@ define([
   'knockout', 'ojs/ojmodule-element-utils', 'ojs/ojarraydataprovider', 'ojs/ojresponsiveutils', 'ojs/ojresponsiveknockoututils', 'services/ui',
   'ojs/ojknockout', 'ojs/ojmodule-element', 'ojs/ojbutton', 'ojs/ojinputtext', 'ojs/ojinputnumber', 'ojs/ojselectsingle', 'ojs/ojformlayout',
   'ojs/ojtable', 'ojs/ojchart', 'ojs/ojgauge', 'ojs/ojtrain', 'ojs/ojdialog', 'ojs/ojmessages', 'ojs/ojnavigationlist', 'ojs/ojdrawerlayout',
-  'ojs/ojavatar', 'ojs/ojtreeview', 'ojs/ojprogress-bar', 'ojs/ojlabel',
+  'ojs/ojavatar', 'ojs/ojtreeview', 'ojs/ojprogress-bar', 'ojs/ojlabel', 'services/work',
 ], function (ko, ModuleElementUtils, ArrayDataProvider, ResponsiveUtils, ResponsiveKnockoutUtils, ui) {
   'use strict';
 
-  const VIEWS = ['dashboard', 'jobs', 'job', 'dispatch', 'station', 'plans', 'plan', 'drs', 'dr', 'holds', 'tests', 'test', 'inspections', 'inventory', 'moves', 'genealogy', 'tree', 'unit', 'items', 'item', 'people', 'audit'];
+  const VIEWS = ['mywork', 'dashboard', 'jobs', 'job', 'dispatch', 'station', 'plans', 'plan', 'drs', 'dr', 'holds', 'tests', 'test', 'inspections', 'inventory', 'moves', 'genealogy', 'tree', 'unit', 'items', 'item', 'people', 'audit'];
+  /* What each role sees in the navigation. Detail pages (a DR, a unit, a plan…) stay reachable by link. */
+  const ROLE_NAV = {
+    'Operator': ['mywork', 'station'],
+    'Quality Technician': ['mywork', 'station', 'drs', 'tests', 'inspections'],
+    'Material Handler': ['mywork', 'dispatch', 'inventory', 'moves'],
+    'Quality Engineer': ['mywork', 'dashboard', 'plans', 'drs', 'holds', 'tests', 'inspections', 'genealogy', 'audit'],
+    'Supervisor': null, // everything
+  };
+  const DETAIL = ['dr', 'plan', 'job', 'test', 'unit', 'tree', 'item'];
   const NAV_FOR = { dr: 'drs', plan: 'plans', job: 'jobs', test: 'tests', unit: 'genealogy', tree: 'genealogy', item: 'items' };
 
   class AppController {
@@ -40,7 +49,8 @@ define([
         if (!v || v === DB.currentUser) return;
         DB.currentUser = v; MES.save();
         const p = MES.person(v); this.toast('Signed in as ' + p.name + ' (' + p.role + ')', 'info');
-        this.refresh();
+        // switching user is signing in: land on that person's home screen
+        this.rev(this.rev() + 1); this.go(this.landing());
       });
 
       this.clock = ko.observable('');
@@ -51,7 +61,8 @@ define([
       const openDr = ko.pureComputed(() => { this.rev(); return DB.drs.filter(d => d.status === 'Open').length; });
       const holds = ko.pureComputed(() => { this.rev(); return MES.activeHolds().length; });
       const it = (id, icon, label, badge) => ({ id, label, icon: ui.icon(icon), badge: badge || null });
-      this.navGroups = [
+      const allGroups = [
+        { label: 'My work', items: [it('mywork', 'check', 'My Work', ko.pureComputed(() => { this.rev(); return this.myWorkCount(); }))] },
         { label: 'Overview', items: [it('dashboard', 'dash', 'Plant Dashboard')] },
         { label: 'Production', items: [it('jobs', 'jobs', 'Jobs & WIP'), it('dispatch', 'dispatch', 'Dispatch List'), it('station', 'station', 'Station Terminal')] },
         { label: 'Quality', items: [it('plans', 'plan', 'Quality Plans'), it('drs', 'alert', 'Discrepancies', openDr), it('holds', 'lock', 'Quality Holds', holds), it('tests', 'test', 'Test Records'), it('inspections', 'inspect', 'Inspection Log')] },
@@ -59,6 +70,10 @@ define([
         { label: 'Traceability', items: [it('genealogy', 'tree', 'As-Built Genealogy')] },
         { label: 'Administration', items: [it('items', 'item', 'Items & Routings'), it('people', 'users', 'Personnel'), it('audit', 'audit', 'E-Signatures & Audit')] },
       ];
+      this.navGroups = ko.pureComputed(() => {
+        const allowed = this.allowed();
+        return allGroups.map(g => ({ label: g.label, items: g.items.filter(i => !allowed || allowed.includes(i.id)) })).filter(g => g.items.length);
+      });
       this.route = ko.observable({ name: 'dashboard', args: [] });
       this.navSelection = ko.pureComputed(() => NAV_FOR[this.route().name] || this.route().name);
       this.navChanged = (event) => {
@@ -86,12 +101,36 @@ define([
       }, () => { MES.reset(); this.userId(DB.currentUser); this.toast('Demo data rebuilt.'); this.refresh(); });
     }
 
+    /* ---------------------------------------------------------------- role-based views */
+    allowed() { this.rev(); const p = MES.person(this.userId()) || DB.people[0]; const a = ROLE_NAV[p.role]; return a === undefined ? null : a; }
+    canSee(name) { const a = this.allowed(); return !a || a.includes(name); }
+    landing() { const p = MES.currentUser(); return p.role === 'Supervisor' ? 'dashboard' : 'mywork'; }
+    /** Number of things waiting on the signed-in user (drives the My Work badge). */
+    myWorkCount() { try { return require('services/work').items(MES.currentUser()).filter(i => i.urgent).length; } catch (e) { return 0; } }
+
+    /** Post the moves that satisfy one replenishment request (shared by Dispatch and My Work). */
+    fulfill(partId, ls) {
+      const r0 = MES.replenishment().find(r => r.partId === partId && r.ls === ls);
+      if (!r0) return this.toast('Request already satisfied.', 'warn');
+      const p = MES.currentUser();
+      if (!['Material Handler', 'Supervisor', 'Quality Engineer'].includes(p.role)) return this.toast(p.name + ' (' + p.role + ') cannot post material moves. Switch to Rosa Jimenez or Tom Becker.', 'bad');
+      let short = r0.short, n = 0;
+      for (const src of r0.sources) {
+        if (short <= 1e-9) break;
+        const q = src.serial ? 1 : Number(Math.min(src.qty, Math.max(short, short * 1.5)).toFixed(2));
+        const r = MES.transfer(src.id, q, r0.ls, DB.currentUser, 'Replenishment request');
+        if (!r.ok) return this.commit(r);
+        short -= q; n++;
+      }
+      this.commit({ ok: true }, 'Posted ' + n + ' move(s) of ' + r0.partId + ' to ' + r0.ls);
+    }
+
     /* ---------------------------------------------------------------- routing */
     parse() {
       let h = '';
       try { h = decodeURIComponent((location.hash || '').replace(/^#\/?/, '')); } catch (e) { h = ''; }
-      const parts = (h || 'dashboard').split('/');
-      return { name: parts[0] || 'dashboard', args: parts.slice(1) };
+      const parts = (h || this.landing()).split('/');
+      return { name: parts[0] || this.landing(), args: parts.slice(1) };
     }
     start() {
       window.addEventListener('hashchange', () => this._load(this.parse()));
@@ -120,7 +159,12 @@ define([
     }
     _load(r) {
       if (r.name === 'genealogy' && r.args[0] && MES.unit(r.args[0])) r = { name: 'tree', args: r.args };
-      if (!VIEWS.includes(r.name)) r = { name: 'dashboard', args: [] };
+      if (!VIEWS.includes(r.name)) r = { name: this.landing(), args: [] };
+      if (!DETAIL.includes(r.name) && !r.args.length && !this.canSee(r.name)) {
+        r = { name: this.landing(), args: [] };
+        try { history.replaceState(null, '', '#/' + r.name); } catch (e) { /* sandboxed */ }
+      }
+      if (r.name === 'station' && r.args.length && !this.canSee('station') && !this.canSee('dispatch')) r = { name: this.landing(), args: [] };
       const sameRoute = this.route().name === r.name && this.route().args.join('/') === r.args.join('/');
       this.route(r);
       this.moduleConfig(ModuleElementUtils.createConfig({ name: r.name, params: { app: this, args: r.args } }));
@@ -136,8 +180,8 @@ define([
     toast(summary, severity, detail) {
       const sevMap = { ok: 'confirmation', bad: 'error', warn: 'warning', info: 'info' };
       const s = sevMap[severity] || severity || 'confirmation';
-      this.messages.push({ id: 'm' + Date.now() + Math.random(), severity: s, summary, detail: detail || '', autoTimeout: s === 'error' ? 7000 : 4000 });
-      while (this.messages().length > 3) this.messages.shift();
+      this.messages.push({ id: 'm' + Date.now() + Math.random(), severity: s, summary, detail: detail || '', autoTimeout: s === 'error' ? 7000 : s === 'confirmation' ? 2500 : 4000 });
+      while (this.messages().length > 2) this.messages.shift();
     }
     /** Apply an engine result: toast on failure; on success persist, toast and refresh. */
     commit(res, okMsg, severity) {

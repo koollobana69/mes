@@ -2,18 +2,18 @@
   <div class="mes-ph"><div><div class="mes-eyebrow">Materials</div><h1 class="oj-typography-heading-lg">Inventory</h1>
     <div class="mes-sub">Lot and serial stock by location across the four buildings. Consumed serials stay here with the unit they were installed in.</div></div>
     <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[openReceive]]">Receive material</oj-button></div></div>
-  <div class="mes-stn-grid">
+  <div class="mes-stn-grid mes-loc-grid">
     <oj-bind-for-each data="[[locTiles]]"><template data-oj-as="l">
       <a href="#" :class="[[l.data.cls]]" data-act="invloc" :data-id="[[l.data.id]]" style="min-height:0"><span class="op"><oj-bind-text value="[[l.data.op]]"></oj-bind-text></span><span class="nm"><oj-bind-text value="[[l.data.name]]"></oj-bind-text></span><span class="q"><oj-bind-text value="[[l.data.q]]"></oj-bind-text></span></a>
     </template></oj-bind-for-each>
   </div>
   <section class="mes-card">
-    <div class="mes-card-bd mes-row" style="align-items:flex-end">
-      <oj-select-single label-hint="Location" data="[[locDP]]" value="{{loc}}" style="max-width:280px"></oj-select-single>
-      <oj-select-single label-hint="Part" data="[[partDP]]" value="{{part}}" style="max-width:300px"></oj-select-single>
+    <div class="mes-toolbar">
+      <oj-select-single label-hint="Location" data="[[locDP]]" value="{{locSel}}" style="max-width:280px"></oj-select-single>
+      <oj-select-single label-hint="Part" data="[[partDP]]" value="{{partSel}}" style="max-width:300px"></oj-select-single>
       <oj-select-single label-hint="Status" data="[[statusDP]]" value="{{status}}" style="max-width:240px"></oj-select-single>
       <oj-input-text label-hint="Search" value="{{q}}" placeholder="Serial, lot, unit" clear-icon="conditional" style="max-width:240px"></oj-input-text>
-      <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[t().note]]"></oj-bind-text></span>
+      <span class="mes-count"><oj-bind-text value="[[t().note]]"></oj-bind-text></span>
     </div>
     <div class="mes-card-bd flush"><oj-table class="mes-table tall" aria-label="Inventory" data="[[t().dp]]" columns="[[t().columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template><template slot="noData"><div class="mes-empty">No stock matches.</div></template></oj-table></div>
   </section>

@@ -1,0 +1,41 @@
+<div class="mes-view mes-work">
+  <div class="mes-ph">
+    <div>
+      <div class="mes-eyebrow">My work</div>
+      <h1 class="oj-typography-heading-lg"><oj-bind-text value="[[greeting]]"></oj-bind-text></h1>
+      <div class="mes-sub"><oj-bind-text value="[[sub]]"></oj-bind-text></div>
+    </div>
+    <div class="mes-acts"><span :class="[['mes-work-summary' + (caughtUp ? ' ok' : '')]]"><oj-bind-text value="[[summary]]"></oj-bind-text></span></div>
+  </div>
+
+  <oj-bind-if test="[[caughtUp]]">
+    <section class="mes-card"><div class="mes-empty mes-caughtup"><div class="big">✓</div><div class="oj-typography-body-lg">Nothing is waiting on you right now.</div><div class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[emptyText]]"></oj-bind-text></div></div></section>
+  </oj-bind-if>
+
+  <oj-bind-for-each data="[[groups]]">
+    <template data-oj-as="g">
+      <section :class="[['mes-card' + (g.data.muted ? ' mes-muted-card' : '')]]">
+        <div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[g.data.title]]"></oj-bind-text></h2><span class="mes-count-pill"><oj-bind-text value="[[g.data.count]]"></oj-bind-text></span><span class="mes-hint"><oj-bind-text value="[[g.data.hint]]"></oj-bind-text></span></div>
+        <ul class="mes-work-list">
+          <oj-bind-for-each data="[[g.data.items]]">
+            <template data-oj-as="i">
+              <li :class="[[i.data.cls]]">
+                <span class="ic" data-bind="html: i.data.icon"></span>
+                <div class="tx"><div class="t" data-bind="html: i.data.title"></div><div class="s" data-bind="html: i.data.sub"></div><div class="m"><oj-bind-text value="[[i.data.meta]]"></oj-bind-text></div></div>
+                <oj-bind-if test="[[i.data.hasAction]]">
+                  <oj-button chroming="[[i.data.chroming]]" :data-act="[[i.data.act]]" :data-href="[[i.data.href]]" :data-part="[[i.data.part]]" :data-ls="[[i.data.ls]]"><oj-bind-text value="[[i.data.label]]"></oj-bind-text></oj-button>
+                </oj-bind-if>
+              </li>
+            </template>
+          </oj-bind-for-each>
+        </ul>
+      </section>
+    </template>
+  </oj-bind-for-each>
+
+  <oj-bind-if test="[[stations.length]]">
+    <div class="mes-work-stations"><span class="oj-typography-body-sm oj-text-color-secondary">Your stations:</span>
+      <oj-bind-for-each data="[[stations]]"><template data-oj-as="s"><a class="mes-chip-link" :href="[[s.data.href]]"><oj-bind-text value="[[s.data.label]]"></oj-bind-text></a></template></oj-bind-for-each>
+    </div>
+  </oj-bind-if>
+</div>

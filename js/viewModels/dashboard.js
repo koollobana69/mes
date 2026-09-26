@@ -16,12 +16,12 @@ define(['knockout', 'services/ui'], function (ko, ui) {
 
     this.plant = DB.company.plant + ' · ' + DB.company.product + ' program';
     this.kpis = [
-      { lbl: 'Units in WIP', val: String(wip.length), foot: byItem('BIW-T1') + ' bodies · ' + byItem('ENG-24T') + ' engines · ' + byItem('VEH-T1') + ' vehicles' },
-      { lbl: 'Vehicles released today', val: String(doneToday('VEH-T1')), foot: doneToday('BIW-T1') + ' bodies · ' + doneToday('ENG-24T') + ' engines completed' },
-      { lbl: 'Vehicle first-pass yield', val: fpy ? Math.round(fpy.pct) + '%' : '—', foot: fpy ? fpy.clean + ' of ' + fpy.total + ' built with zero discrepancies' : 'No completed vehicles' },
-      { lbl: 'Open discrepancies', val: String(openDr.length), foot: bigDr + ' major/critical · ' + openDr.filter(d => d.status === 'Open').length + ' awaiting MRB', alert: bigDr > 0 },
-      { lbl: 'Active quality holds', val: String(holds.length), foot: holds.map(h => h.type).join(', ') || 'None', alert: holds.length > 0 },
-      { lbl: 'Test first-pass (7 days)', val: fpt + '%', foot: wk.length + ' test records' },
+      { icon: ui.icon('jobs'), tone: 'info', lbl: 'Units in WIP', val: String(wip.length), foot: byItem('BIW-T1') + ' bodies · ' + byItem('ENG-24T') + ' engines · ' + byItem('VEH-T1') + ' vehicles' },
+      { icon: ui.icon('check'), tone: 'ok', lbl: 'Vehicles released today', val: String(doneToday('VEH-T1')), foot: doneToday('BIW-T1') + ' bodies · ' + doneToday('ENG-24T') + ' engines completed' },
+      { icon: ui.icon('gauge'), tone: fpy && fpy.pct >= 90 ? 'ok' : 'warn', lbl: 'Vehicle first-pass yield', val: fpy ? Math.round(fpy.pct) + '%' : '—', foot: fpy ? fpy.clean + ' of ' + fpy.total + ' built with zero discrepancies' : 'No completed vehicles' },
+      { icon: ui.icon('alert'), tone: 'warn', lbl: 'Open discrepancies', val: String(openDr.length), foot: bigDr + ' major/critical · ' + openDr.filter(d => d.status === 'Open').length + ' awaiting MRB', alert: bigDr > 0 },
+      { icon: ui.icon('lock'), tone: 'bad', lbl: 'Active quality holds', val: String(holds.length), foot: holds.map(h => h.type).join(', ') || 'None', alert: holds.length > 0 },
+      { icon: ui.icon('test'), tone: fpt >= 95 ? 'ok' : 'warn', lbl: 'Test first-pass (7 days)', val: fpt + '%', foot: wk.length + ' test records' },
     ];
 
     this.lines = DB.jobs.map(job => {
@@ -41,6 +41,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
             href: '#/station/' + o.station, cls: 'mes-stn ' + (held.length ? 'held' : active ? 'active' : ''),
             op: 'OP' + o.seq + ' · ' + o.station, name: o.name,
             unit: active ? '▶ ' + ui.shortSerial(active.serial) : held.length ? '⏸ ' + ui.shortSerial(held[0].serial) + ' HOLD' : 'idle',
+            who: active ? (n => n.split(' ')[0] + ' ' + (n.split(' ')[1] || '').charAt(0) + '.')(MES.userName(active.ops[o.seq].operator)) + ' · ' + U.dur(MES.now() - active.ops[o.seq].start).replace(' h ', 'h ').replace(' m', 'm').replace(' min', 'm') : '',
             queue: queued.length ? queued.length + ' queued' : '',
             zone: MES.station(o.station).wc,
             tip: o.name + ' @ ' + o.station + (active ? ' · running ' + active.serial + ' (' + MES.userName(active.ops[o.seq].operator) + ')' : ' · idle') + (queued.length ? ' · queued: ' + queued.map(u => u.serial).join(', ') : ''),

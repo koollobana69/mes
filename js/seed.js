@@ -57,7 +57,7 @@ const SEED = (() => {
     const clone = x => JSON.parse(JSON.stringify(x));
 
     DB = {
-      version: 1, seededAt: NOW, simNow: START - 20 * H, currentUser: 'U106', seq: {},
+      version: 1, seededAt: NOW, simNow: START - 20 * H, currentUser: 'U401', seq: {},
       company: clone(MASTER.company), buildings: clone(MASTER.buildings), locations: clone(MASTER.locations), stations: clone(MASTER.stations),
       people: clone(MASTER.people), parts: clone(MASTER.parts), boms: clone(MASTER.boms), routings: clone(MASTER.routings),
       plans: [], jobs: [], units: [], results: [], attempts: [], sigs: [], drs: [], holds: [], inv: [], moves: [], tests: [], audit: [],
@@ -300,7 +300,7 @@ const SEED = (() => {
       else p.t = Math.max(Number(r.value) || DB.simNow, DB.simNow);
     }
     DB.simNow = null;
-    DB.currentUser = 'U106';
+    DB.currentUser = 'U401';
     return DB;
   }
 

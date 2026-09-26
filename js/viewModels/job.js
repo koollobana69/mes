@@ -39,8 +39,8 @@ define(['services/ui'], function (ui) {
       { h: 'Location', v: u => E(u.parent ? 'Installed in ' + u.parent : u.location) },
       { h: 'Plan', v: u => ui.link('plan/' + u.planId, 'rev ' + E(u.planRev)) },
       { h: 'DRs', num: 1, v: u => { const n = DB.drs.filter(d => d.serial === u.serial).length, o = ui.openDrs(u.serial).length; return n ? n + (o ? ' <span class="oj-text-color-danger">(' + o + ' open)</span>' : '') : '0'; } },
-      { h: 'Launched', v: u => U.fmtDT(u.launchedAt) },
-      { h: 'Completed', v: u => U.fmtDT(u.completedAt) },
+      { h: 'Launched', v: u => ui.dt(u.launchedAt) },
+      { h: 'Completed', v: u => ui.dt(u.completedAt) },
     ], us, { rowGo: u => 'unit/' + u.serial });
     this.launch = () => { const r = MES.launchUnit(j.id, DB.currentUser); app.commit(r, r.ok ? 'Launched ' + r.unit.serial + ' to ' + MES.routing(r.unit.itemId)[0].station : ''); };
   };

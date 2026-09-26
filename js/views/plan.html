@@ -16,17 +16,17 @@
       </div>
     </div>
 
-    <div class="mes-grid mes-g3">
+    <div class="mes-grid mes-g3 mes-align-start">
       <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Plan summary</h2></div><div class="mes-card-bd" data-bind="html: summaryHtml"></div></section>
       <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Plan checks</h2><span class="mes-hint"><oj-bind-text value="[[issuesHint]]"></oj-bind-text></span></div><div class="mes-card-bd flush" style="max-height:260px;overflow:auto" data-bind="html: issuesHtml"></div></section>
       <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Revision history</h2></div><div class="mes-card-bd flush" data-bind="html: revsHtml"></div></section>
     </div>
-    <div class="mes-row" style="gap:16px" data-bind="html: legendHtml"></div>
+    <div class="mes-legend" data-bind="html: legendHtml"></div>
 
     <section class="mes-card">
       <div class="mes-card-bd mes-row" style="gap:16px">
         <oj-select-single label-hint="Show" data="[[filterDP]]" value="{{filter}}" style="max-width:420px"></oj-select-single>
-        <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[opCount]]"></oj-bind-text></span>
+        <span class="mes-count"><oj-bind-text value="[[opCount]]"></oj-bind-text></span>
       </div>
     </section>
 

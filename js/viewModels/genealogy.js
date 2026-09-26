@@ -37,7 +37,7 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       { h: 'Body', v: u => { const c = u.components.find(x => x.slot === 'Body'); return c ? '<span class="mes-mono">' + E(c.serial) + '</span>' : '—'; } },
       { h: 'Engine', v: u => { const c = u.components.find(x => x.slot === 'Engine'); return c ? '<span class="mes-mono">' + E(c.serial) + '</span>' : '—'; } },
       { h: 'Serialized parts', num: 1, v: countSer }, { h: 'DRs', num: 1, v: u => DB.drs.filter(d => d.serial === u.serial).length },
-      { h: 'Released', v: u => U.fmtDT(u.completedAt) },
+      { h: 'Released', v: u => ui.dt(u.completedAt) },
     ], vehicles, { rowGo: u => 'genealogy/' + u.serial });
   };
 });

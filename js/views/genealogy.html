@@ -1,7 +1,7 @@
 <div class="mes-view">
   <div class="mes-ph"><div><div class="mes-eyebrow">Traceability</div><h1 class="oj-typography-heading-lg">As-Built Genealogy</h1>
     <div class="mes-sub">Trace down from a VIN to every serialized component and material lot, or up from a component or lot to every vehicle that contains it.</div></div></div>
-  <section class="mes-card"><div class="mes-card-bd mes-row" style="align-items:flex-end">
+  <section class="mes-card"><div class="mes-toolbar">
     <oj-input-text label-hint="VIN, engine/body serial, component serial or lot" value="{{q}}" on-keyup="[[searchKey]]" clear-icon="conditional" style="max-width:460px"></oj-input-text>
     <oj-button chroming="callToAction" on-oj-action="[[search]]">Trace</oj-button>
   </div></section>
