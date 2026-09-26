@@ -28,6 +28,11 @@ const SEED = (() => {
       case 'AB-6002': return 'PAB' + U.pad(26090800 + n, 8);
       case 'SB-6101': return 'PT' + U.pad(60912000 + n * 2, 8);
       case 'BT-7001': return 'BAT' + U.pad(9120000 + n * 13, 7);
+      case 'IC-8101': return 'IC' + U.pad(26091500 + n * 3, 8);
+      case 'HU-8201': return 'HU' + U.pad(88120000 + n * 7, 8);
+      case 'SC-8301': return 'SC' + U.pad(40550000 + n * 5, 8);
+      case 'SE-8401': return 'SE' + U.pad(71300000 + n, 8);
+      case 'RD-8801': return 'RD' + U.pad(55010000 + n * 9, 8);
     }
     return partId + '-' + n;
   }
@@ -40,8 +45,8 @@ const SEED = (() => {
     'ENG-24T#3@60.C4': { fail: 'Oil seep at turbo oil feed banjo after 8-min hot run', after: { delay: 1.5 * H, disp: 'Repair', by: 'U303', root: 'Banjo copper sealing washer omitted at OP40 dress.', containment: 'Engines #4–#6 inspected at dress: washers present.', ca: 'Washer presence added to OP40 checklist; kitted poka-yoke tray.', rework: 'PASS', verify: 2 * H } },
     'ENG-24T#5@30.C4': { value: 0.33, after: { delay: 0.8 * H, disp: 'Rework', by: 'U303', root: 'Exhaust lash shim selection error (0.05 mm step).', ca: 'Shim selection moved to automated lash calculator.', rework: 0.28, verify: 1.5 * H } },
     'ENG-24T#9@50.C3': { value: 1080, after: null },
-    'VEH-T1#2@30.C5': { value: 168, after: { delay: 1.2 * H, disp: 'Rework', by: 'U302', root: 'Multi-spindle WN-2 spindle 4 clutch slipping; under-torque on RR position.', containment: 'Previous vehicle RR nuts audited with calibrated wrench: OK.', ca: 'Spindle 4 clutch replaced; transducer calibration interval cut to 30 days.', rework: 191, verify: 2 * H } },
-    'VEH-T1#5@70.C3': { fail: 'Water drip at LH tail lamp gasket after monsoon cycle', after: { delay: 1.0 * H, disp: 'Repair', by: 'U302', root: 'Tail lamp gasket pinched at install (fastener started before lamp seated).', ca: 'Work instruction updated: seat lamp before driving fasteners.', rework: 'PASS', verify: 1.2 * H } },
+    'VEH-T1#2@140.C4': { value: 168, after: { delay: 1.2 * H, disp: 'Rework', by: 'U302', root: 'Multi-spindle WN-2 spindle 4 clutch slipping; under-torque on RR position.', containment: 'Previous vehicle RR nuts audited with calibrated wrench: OK.', ca: 'Spindle 4 clutch replaced; transducer calibration interval cut to 30 days.', rework: 191, verify: 2 * H } },
+    'VEH-T1#5@280.C3': { fail: 'Water drip at LH tail lamp gasket after monsoon cycle', after: { delay: 1.0 * H, disp: 'Repair', by: 'U302', root: 'Tail lamp gasket pinched at install (fastener started before lamp seated).', ca: 'Work instruction updated: seat lamp before driving fasteners.', rework: 'PASS', verify: 1.2 * H } },
   };
 
   function build() {
@@ -69,7 +74,7 @@ const SEED = (() => {
     DB.plans.push(planFrom('ENG-24T', 'A', 'Released', S['ENG-24T'], { createdBy: 'U303', createdAt: START - 40 * 24 * H, releasedBy: 'U303', releasedAt: START - 38 * 24 * H, changeNote: 'Initial release. Cold/hot test limits per ENG-SPEC-24T-017.' }));
     DB.plans.push(planFrom('VEH-T1', 'A', 'Released', S['VEH-T1'], { createdBy: 'U302', createdAt: START - 35 * 24 * H, releasedBy: 'U302', releasedAt: START - 33 * 24 * H, changeNote: 'Initial release for SOP. Restraint serials and EOL limits per VEH-SPEC-T1-004.' }));
     const vehB = clone(S['VEH-T1']);
-    vehB[60].splice(6, 0, B.meas('Headlamp aim, low beam vertical', '%', -1.0, -1.5, -0.5, 2, { cat: 'Test' }));
+    vehB[200].splice(3, 0, B.meas('Hazard lamp circuit current', 'A', 4.2, 3.5, 5.0, 2, { gauge: 'Clamp meter CM-2', cat: 'Electrical' }));
     DB.plans.push(planFrom('VEH-T1', 'B', 'Draft', vehB, { createdBy: 'U302', createdAt: NOW - 20 * H, changeNote: '', basedOn: 'QP-VEH-T1-A' }));
     // plan signatures (approval manifests)
     DB.plans.filter(p => p.releasedBy).forEach(p => {
@@ -94,10 +99,14 @@ const SEED = (() => {
       'HD-3101': [['LC2609-0071', 16]], 'DR-3201': [['LC2609-0088', 32]], 'TG-3301': [['LC2609-0093', 16]],
       'SEA-9001': [['AD-5521', 20]], 'PNT-9002': [['AD-GW-7710', 60]],
       'PS-4201': [['L260902-118', 32], ['L260908-121', 48]], 'CR-4202': [['KF-26-3310', 64]], 'CS-4302': [['KF-26-3402', 32]], 'GK-4601': [['SR-90417', 16]], 'OL-9101': [['PX-2609-A', 120]],
-      'WT-5201': [['SW-37-2609', 56]], 'WH-7101': [['VT-H-5530', 14]], 'CL-9201': [['PX-C-8812', 160]], 'BF-9202': [['PX-B-3307', 24]],
+      'WT-5201': [['SW-37-2609', 64]], 'WH-7101': [['VT-H-5530', 16]], 'CL-9201': [['PX-C-8812', 180]], 'BF-9202': [['PX-B-3307', 24]],
+      'HL-8021': [['IT-HL-0912', 16]], 'IP-8001': [['CS-IP-2231', 16]], 'CN-8151': [['CS-CN-1180', 16]], 'SH-8161': [['AD-SH-0442', 16]], 'SW-8311': [['KS-SW-7730', 16]],
+      'RK-5301': [['KS-RK-5521', 16]], 'FL-5401': [['MT-FL-3102', 16]], 'EX-5501': [['MT-EX-8830', 16]], 'WS-8501': [['CV-WS-1402', 16]], 'UR-9301': [['AD-UR-6610', 12]],
+      'DT-8551': [['IT-DT-2210', 32]], 'RS-8451': [['CT-RS-0917', 16]], 'LP-8601': [['LA-HL-4410', 32]], 'TI-8611': [['LA-TI-1202', 32]], 'TL-8621': [['LA-TL-3307', 32]],
+      'BP-8701': [['MS-BP-7781', 16]], 'GR-8711': [['MS-GR-2044', 16]], 'MR-8721': [['CV-MR-5518', 32]],
     };
     Object.entries(lotPlan).forEach(([pid, lots]) => lots.forEach(([lot, qty]) => MES.receive({ partId: pid, lot, qty, to: 'B40-A01', by: 'U201', supplierRef: 'ASN ' + (4400 + lot.length * 7 + qty) })));
-    const serialCounts = { 'EB-4001': 18, 'CK-4101': 18, 'CH-4301': 18, 'TC-4401': 17, 'EC-4501': 17, 'TR-5001': 14, 'AX-5101': 14, 'AB-6001': 14, 'AB-6002': 14, 'SB-6101': 30, 'BT-7001': 14 };
+    const serialCounts = { 'EB-4001': 18, 'CK-4101': 18, 'CH-4301': 18, 'TC-4401': 17, 'EC-4501': 17, 'TR-5001': 14, 'AX-5101': 14, 'AB-6001': 14, 'AB-6002': 14, 'SB-6101': 30, 'BT-7001': 14, 'IC-8101': 14, 'HU-8201': 14, 'SC-8301': 14, 'SE-8401': 30, 'RD-8801': 14 };
     Object.entries(serialCounts).forEach(([pid, n]) => {
       const serials = []; for (let i = 0; i < n; i++) serials.push(serialGen(pid, i));
       MES.receive({ partId: pid, serials, lot: null, to: 'B40-A02', by: 'U201', supplierRef: 'ASN ' + (5100 + n) });
@@ -108,11 +117,12 @@ const SEED = (() => {
     [['UB-1001', 8], ['SF-2001L', 8], ['SF-2001R', 8], ['RF-3001', 8], ['HD-3101', 8], ['DR-3201', 16], ['TG-3301', 8], ['SEA-9001', 6], ['PNT-9002', 30]].forEach(([p, q]) => stage(p, q, 'B10-LS'));
     stage('PS-4201', 12, 'B20-LS');
     [['CR-4202', 32], ['CS-4302', 16], ['GK-4601', 8], ['OL-9101', 60]].forEach(([p, q]) => stage(p, q, 'B20-LS'));
-    [['WT-5201', 24], ['WH-7101', 6], ['CL-9201', 60], ['BF-9202', 8]].forEach(([p, q]) => stage(p, q, 'B30-LS'));
+    [['WT-5201', 24], ['WH-7101', 6], ['CL-9201', 60], ['BF-9202', 8], ['HL-8021', 6], ['IP-8001', 6], ['CN-8151', 6], ['SH-8161', 6], ['SW-8311', 6], ['RK-5301', 6], ['FL-5401', 6], ['EX-5501', 6], ['WS-8501', 6], ['UR-9301', 4], ['DT-8551', 12], ['RS-8451', 6], ['LP-8601', 12], ['TI-8611', 12], ['TL-8621', 12], ['BP-8701', 6], ['GR-8711', 6], ['MR-8721', 12]].forEach(([p, q]) => stage(p, q, 'B30-LS'));
     const stageSerials = (pid, n, to) => DB.inv.filter(i => i.partId === pid && i.location === 'B40-A02').slice(0, n).forEach(r => MES.transfer(r.id, 1, to, 'U201', 'Line-side kanban'));
     ['EB-4001', 'CK-4101', 'CH-4301', 'TC-4401', 'EC-4501'].forEach(p => stageSerials(p, 6, 'B20-LS'));
-    ['TR-5001', 'AX-5101', 'AB-6001', 'AB-6002', 'BT-7001'].forEach(p => stageSerials(p, 5, 'B30-LS'));
+    ['TR-5001', 'AX-5101', 'AB-6001', 'AB-6002', 'BT-7001', 'IC-8101', 'HU-8201', 'SC-8301', 'RD-8801'].forEach(p => stageSerials(p, 5, 'B30-LS'));
     stageSerials('SB-6101', 10, 'B30-LS');
+    stageSerials('SE-8401', 10, 'B30-LS');
 
     /* ---------------- simulation ---------------- */
     const procs = [];
@@ -151,7 +161,7 @@ const SEED = (() => {
       for (const opn of MES.routing(u.itemId)) {
         const st = MES.station(opn.station), ls = st.building + '-LS';
         const opr = operatorFor(opn.station, idx);
-        yield DB.simNow + jitter(8, 40);
+        yield DB.simNow + (u.itemId === 'VEH-T1' ? jitter(2, 10) : jitter(8, 40));
         // wait for station free / start
         let tries = 0;
         while (!MES.startOp(u.serial, opn.seq, opr).ok) { if (++tries > 400) return; yield DB.simNow + 15 * MIN; }
@@ -218,8 +228,8 @@ const SEED = (() => {
         let t2 = 0;
         while (!MES.completeOp(u.serial, opn.seq, opr).ok) { if (++t2 > 200) return; yield DB.simNow + 30 * MIN; }
         // vehicle #7: cosmetic damage found at trim, logged without holding the unit
-        if (u.itemId === 'VEH-T1' && idx === 7 && opn.seq === 40) {
-          MES.createDR({ by: 'U107', serial: u.serial, itemId: u.itemId, seq: 40, source: 'Manual', severity: 'Minor', category: 'Cosmetic', title: 'Scuff on LH B-pillar trim, approx. 30 mm', description: 'Found during interior trim walk-around. Trim panel not cracked; appearance item.' });
+        if (u.itemId === 'VEH-T1' && idx === 7 && opn.seq === 160) {
+          MES.createDR({ by: 'U110', serial: u.serial, itemId: u.itemId, seq: 160, source: 'Manual', severity: 'Minor', category: 'Cosmetic', title: 'Scuff on LH front door trim panel, approx. 30 mm', description: 'Found during door trim walk-around. Panel not cracked; appearance item.' });
         }
       }
     }

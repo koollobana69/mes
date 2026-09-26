@@ -1,0 +1,17 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Traceability</div><h1 class="oj-typography-heading-lg">As-Built Genealogy</h1>
+    <div class="mes-sub">Trace down from a VIN to every serialized component and material lot, or up from a component or lot to every vehicle that contains it.</div></div></div>
+  <section class="mes-card"><div class="mes-card-bd mes-row" style="align-items:flex-end">
+    <oj-input-text label-hint="VIN, engine/body serial, component serial or lot" value="{{q}}" on-keyup="[[searchKey]]" clear-icon="conditional" style="max-width:460px"></oj-input-text>
+    <oj-button chroming="callToAction" on-oj-action="[[search]]">Trace</oj-button>
+  </div></section>
+  <oj-bind-if test="[[hasQuery]]">
+    <div class="mes-grid mes-g-main">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[wuTitle]]"></oj-bind-text></h2><span class="mes-hint"><oj-bind-text value="[[wuHint]]"></oj-bind-text></span></div>
+        <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Where used" data="[[wu.dp]]" columns="[[wu.columns]]" on-oj-row-action="[[rowAction]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template><template slot="noData"><div class="mes-empty">Not installed in any unit.</div></template></oj-table></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Material record</h2></div><div class="mes-card-bd" data-bind="html: recHtml"></div></section>
+    </div>
+  </oj-bind-if>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[vehTitle]]"></oj-bind-text></h2></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Vehicles" data="[[veh.dp]]" columns="[[veh.columns]]" on-oj-row-action="[[rowAction]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+</div>

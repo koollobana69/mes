@@ -19,4 +19,7 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(data);
   });
-}).listen(port, () => console.log('Ridgeline MES running at http://localhost:' + port));
+}).listen(port, () => {
+  if (!fs.existsSync(path.join(root, 'libs', 'oj', 'min'))) console.warn('Oracle JET runtime not found in ./libs — run `npm install` first.');
+  console.log('Ridgeline MES (Oracle JET · Redwood) running at http://localhost:' + port);
+});

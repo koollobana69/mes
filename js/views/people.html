@@ -1,0 +1,8 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Administration</div><h1 class="oj-typography-heading-lg">Personnel</h1>
+    <div class="mes-sub">Operators, material handlers, quality staff and supervisors. Station qualifications control who can start an operation and record data; roles control who can sign.</div></div></div>
+  <section class="mes-card"><div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Personnel" data="[[t.dp]]" columns="[[t.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+  <oj-bind-for-each data="[[matrix]]"><template data-oj-as="m">
+    <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Qualification matrix · <oj-bind-text value="[[m.data.name]]"></oj-bind-text></h2></div><div class="mes-card-bd" data-bind="html: m.data.html"></div></section>
+  </template></oj-bind-for-each>
+</div>

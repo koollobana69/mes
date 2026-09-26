@@ -1,12 +1,19 @@
 {
   "name": "ridgeline-mes",
-  "version": "1.0.0",
-  "description": "Interactive MES + QMS prototype for a vehicle plant (Body, Engine, Final Assembly) with quality plans, discrepancies, holds, tests and as-built genealogy.",
+  "version": "2.0.0",
+  "description": "Oracle JET (Redwood) MES + QMS prototype for a vehicle plant: 3 jobs incl. a 29-operation final assembly line, quality plans, discrepancies/MRB, holds, tests and as-built genealogy.",
   "private": true,
   "scripts": {
+    "postinstall": "node tools/copy-jet-libs.js",
     "start": "node server.js",
-    "build": "node tools/build-single.js",
-    "test": "node tools/smoke-test.js"
+    "test": "node tools/smoke-test.js",
+    "test:ui": "node tools/ui-test.js"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@oracle/oraclejet": "21.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

@@ -1,26 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-us">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ridgeline MES</title>
-<meta name="description" content="Interactive MES + QMS prototype for a vehicle plant: production jobs, station terminals, quality plans, discrepancies, holds, test records and as-built genealogy.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<meta name="description" content="Oracle JET (Redwood) MES + QMS prototype for a vehicle plant: production jobs, station terminals, quality plans, discrepancies, holds, test records and as-built genealogy.">
+<link rel="stylesheet" id="css" href="libs/oj/css/redwood/oj-redwood-min.css">
 <link rel="stylesheet" href="css/app.css">
 </head>
-<body>
-<div id="app"><div style="padding:40px;font-family:system-ui">Loading Ridgeline MES…</div></div>
+<body class="oj-web-applayout-body">
+<div id="globalBody" class="oj-web-applayout-page mes-page" style="display:none" data-bind="visible: true">
+
+  <header role="banner" class="oj-web-applayout-header mes-header">
+    <div class="oj-web-applayout-max-width oj-flex-bar oj-sm-align-items-center mes-header-bar">
+      <div class="oj-flex-bar-start oj-sm-align-items-center">
+        <oj-button display="icons" chroming="borderless" on-oj-action="[[toggleDrawer]]" class="mes-header-btn">
+          <span slot="startIcon" class="oj-fwk-icon oj-fwk-icon-hamburger"></span>Menu
+        </oj-button>
+        <a href="#/dashboard" class="mes-brand">
+          <span class="mes-logo" aria-hidden="true">RMW</span>
+          <span>
+            <span class="oj-web-applayout-header-title mes-brand-title">Ridgeline MES</span>
+            <span class="mes-brand-sub" data-bind="text: plant"></span>
+          </span>
+        </a>
+      </div>
+      <div class="oj-flex-bar-middle oj-sm-align-items-center mes-search">
+        <oj-input-text id="gsearch" value="{{searchText}}" placeholder="Find VIN, serial, lot, DR or job" label-hint="Search" label-edge="none" clear-icon="conditional" on-keyup="[[searchKey]]" class="mes-search-input">
+          <span slot="start" class="oj-fwk-icon oj-fwk-icon-magnifier mes-search-ico"></span>
+        </oj-input-text>
+      </div>
+      <div class="oj-flex-bar-end oj-sm-align-items-center mes-userbox">
+        <span class="mes-clock" data-bind="text: clock"></span>
+        <oj-avatar role="img" size="xs" initials="[[userInitials]]" background="[[userColor]]" :aria-label="[[userName]]"></oj-avatar>
+        <oj-select-single id="usersel" class="mes-user-select" data="[[peopleDP]]" value="{{userId}}" label-hint="Signed-in user" label-edge="none"></oj-select-single>
+      </div>
+    </div>
+  </header>
+
+  <oj-drawer-layout start-opened="{{drawerOpen}}" start-display="[[drawerDisplay]]" class="mes-drawer-layout">
+    <div slot="start" class="mes-drawer">
+      <nav aria-label="Main">
+        <oj-bind-for-each data="[[navGroups]]">
+          <template data-oj-as="g">
+            <div class="mes-nav-group" data-bind="text: g.data.label"></div>
+            <oj-navigation-list class="mes-nav" drill-mode="none" edge="start" :aria-label="[[g.data.label]]" selection="[[navSelection]]" on-selection-changed="[[navChanged]]">
+              <ul>
+                <oj-bind-for-each data="[[g.data.items]]">
+                  <template data-oj-as="it">
+                    <li :id="[[it.data.id]]">
+                      <a>
+                        <span class="oj-navigationlist-item-icon mes-nav-ico" data-bind="html: it.data.icon"></span>
+                        <span data-bind="text: it.data.label"></span>
+                        <oj-bind-if test="[[it.data.badge && it.data.badge() > 0]]">
+                          <span class="oj-badge oj-badge-danger oj-badge-sm mes-nav-badge" data-bind="text: it.data.badge"></span>
+                        </oj-bind-if>
+                      </a>
+                    </li>
+                  </template>
+                </oj-bind-for-each>
+              </ul>
+            </oj-navigation-list>
+          </template>
+        </oj-bind-for-each>
+      </nav>
+      <div class="mes-drawer-foot">
+        <div class="oj-typography-body-xs oj-text-color-secondary">Trailhand T1 program · demo data</div>
+        <oj-button chroming="borderless" on-oj-action="[[askReset]]" class="mes-reset-btn">Reset demo data</oj-button>
+      </div>
+    </div>
+
+    <main role="main" class="oj-web-applayout-content mes-content" id="content">
+      <oj-module config="[[moduleConfig]]"></oj-module>
+    </main>
+  </oj-drawer-layout>
+
+  <oj-messages messages="[[messagesDP]]" display="notification" position="[[messagePosition]]" aria-live="polite"></oj-messages>
+
+  <!-- Global electronic-signature dialog (21 CFR Part 11 style manifest) -->
+  <oj-dialog id="sigDialog" dialog-title="[[sig.title]]" cancel-behavior="icon" class="mes-dialog" on-oj-close="[[sig.onClose]]">
+    <div slot="body">
+      <div class="mes-dialog-body">
+        <div data-bind="html: sig.summary"></div>
+        <oj-bind-if test="[[sig.noteLabel()]]">
+          <oj-text-area value="{{sig.note}}" label-hint="[[sig.noteLabel]]" rows="3" class="oj-form-control-full-width"></oj-text-area>
+        </oj-bind-if>
+        <div class="mes-sig-box">
+          <div class="mes-sig-head">
+            <span data-bind="html: sigIcon"></span><strong>Electronic signature</strong>
+            <span class="oj-badge oj-badge-subtle oj-badge-info" data-bind="text: sig.role"></span>
+            <span class="oj-badge oj-badge-subtle" data-bind="text: 'Meaning: ' + sig.meaning()"></span>
+          </div>
+          <oj-form-layout max-columns="2" direction="row" user-assistance-density="compact">
+            <oj-select-single id="sigSigner" label-hint="Signer" data="[[sig.signersDP]]" value="{{sig.signer}}"></oj-select-single>
+            <oj-input-password id="sigPin" label-hint="PIN" value="{{sig.pin}}" placeholder="4-digit PIN" on-keyup="[[sig.pinKey]]"></oj-input-password>
+          </oj-form-layout>
+          <div class="oj-typography-body-sm oj-text-color-secondary">By signing, I confirm the record above is accurate and that I am the person identified. The signature is bound to the record and cannot be edited or removed. <em>(Demo PIN for everyone: 1234)</em></div>
+          <oj-bind-if test="[[sig.error()]]">
+            <div class="mes-inline-error" role="alert" data-bind="text: sig.error"></div>
+          </oj-bind-if>
+        </div>
+      </div>
+    </div>
+    <div slot="footer">
+      <oj-button chroming="outlined" on-oj-action="[[sig.cancel]]">Cancel</oj-button>
+      <oj-button id="sigSubmit" chroming="[[sig.danger() ? 'danger' : 'callToAction']]" on-oj-action="[[sig.submit]]"><span data-bind="text: sig.confirm"></span></oj-button>
+    </div>
+  </oj-dialog>
+
+  <!-- Global confirm dialog -->
+  <oj-dialog id="confirmDialog" dialog-title="[[confirm.title]]" cancel-behavior="icon" class="mes-dialog">
+    <div slot="body"><div class="mes-dialog-body" data-bind="html: confirm.body"></div></div>
+    <div slot="footer">
+      <oj-button chroming="outlined" on-oj-action="[[confirm.cancel]]"><span data-bind="text: confirm.cancelLabel"></span></oj-button>
+      <oj-button chroming="danger" on-oj-action="[[confirm.ok]]"><span data-bind="text: confirm.okLabel"></span></oj-button>
+    </div>
+  </oj-dialog>
+</div>
+
 <noscript>Ridgeline MES needs JavaScript enabled.</noscript>
+<!-- Domain layer: plain scripts that define MES, DB, SEED, U and Formula globals -->
 <script src="js/util.js"></script>
 <script src="js/master.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/seed.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/views-prod.js"></script>
-<script src="js/views-quality.js"></script>
-<script src="js/views-trace.js"></script>
-<script src="js/app.js"></script>
+<!-- Oracle JET via RequireJS -->
+<script src="libs/require/require.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>

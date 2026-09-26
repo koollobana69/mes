@@ -1,0 +1,12 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Item not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/items">Items</a> / <oj-bind-text value="[[id]]"></oj-bind-text></div>
+    <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg"><oj-bind-text value="[[title]]"></oj-bind-text></h1><div class="mes-sub"><oj-bind-text value="[[sub]]"></oj-bind-text></div></div>
+      <div class="mes-acts"><oj-bind-if test="[[planHref]]"><a class="oj-link" :href="[[planHref]]"><oj-bind-text value="[[planLabel]]"></oj-bind-text></a></oj-bind-if></div></div>
+    <div class="mes-grid mes-g2">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[bomTitle]]"></oj-bind-text></h2></div><div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="BOM" data="[[bom.dp]]" columns="[[bom.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[routingTitle]]"></oj-bind-text></h2></div><div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Routing" data="[[routing.dp]]" columns="[[routing.columns]]" on-oj-row-action="[[rowAction]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+    </div>
+  </oj-bind-if>
+</div>

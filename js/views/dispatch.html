@@ -1,0 +1,16 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Production</div><h1 class="oj-typography-heading-lg">Dispatch List</h1>
+    <div class="mes-sub">What each station is running, what is queued behind it, and whether material and quality gates allow the next unit to start.</div></div></div>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Material move requests</h2><span class="mes-hint"><oj-bind-text value="[[moveHint]]"></oj-bind-text></span></div>
+    <oj-bind-if test="[[hasMoves]]"><div class="mes-card-bd flush">
+      <oj-table class="mes-table" aria-label="Move requests" data="[[moves.dp]]" columns="[[moves.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table>
+    </div></oj-bind-if>
+  </section>
+  <oj-bind-for-each data="[[buildings]]">
+    <template data-oj-as="b">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[b.data.name]]"></oj-bind-text></h2><span class="mes-hint"><oj-bind-text value="[[b.data.hint]]"></oj-bind-text></span></div>
+        <div class="mes-card-bd flush"><oj-table class="mes-table" :aria-label="[[b.data.name]]" data="[[b.data.t.dp]]" columns="[[b.data.t.columns]]" on-oj-row-action="[[b.data.rowAction]]">
+          <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+    </template>
+  </oj-bind-for-each>
+</div>

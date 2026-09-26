@@ -1,0 +1,8 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Administration</div><h1 class="oj-typography-heading-lg">Items &amp; Routings</h1>
+    <div class="mes-sub">Item master for the Trailhand T1 program: three manufactured assemblies, their bills of materials and routings, and purchased components.</div></div></div>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Manufactured assemblies</h2></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Assemblies" data="[[asm.dp]]" columns="[[asm.columns]]" on-oj-row-action="[[rowAction]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+  <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[buyTitle]]"></oj-bind-text></h2></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table tall" aria-label="Purchased components" data="[[buy.dp]]" columns="[[buy.columns]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+</div>

@@ -1,0 +1,176 @@
+<div class="mes-view">
+  <oj-bind-if test="[[picker]]">
+    <div class="mes-ph"><div><div class="mes-eyebrow">Production</div><h1 class="oj-typography-heading-lg">Station Terminal</h1>
+      <div class="mes-sub"><oj-bind-text value="[[userLine]]"></oj-bind-text></div></div></div>
+    <oj-bind-for-each data="[[groups]]">
+      <template data-oj-as="g">
+        <section class="mes-card">
+          <div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[g.data.name]]"></oj-bind-text></h2></div>
+          <div class="mes-card-bd mes-stack">
+            <oj-bind-for-each data="[[g.data.zones]]">
+              <template data-oj-as="z">
+                <div>
+                  <div class="mes-nav-group" style="padding-left:0"><oj-bind-text value="[[z.data.zone]]"></oj-bind-text></div>
+                  <div class="mes-stn-grid">
+                    <oj-bind-for-each data="[[z.data.tiles]]">
+                      <template data-oj-as="t">
+                        <a :class="[[t.data.cls]]" :href="[[t.data.href]]"><span class="op"><oj-bind-text value="[[t.data.op]]"></oj-bind-text></span><span class="nm"><oj-bind-text value="[[t.data.name]]"></oj-bind-text></span><span class="u"><oj-bind-text value="[[t.data.unit]]"></oj-bind-text></span><span class="q"><oj-bind-text value="[[t.data.q]]"></oj-bind-text></span></a>
+                      </template>
+                    </oj-bind-for-each>
+                  </div>
+                </div>
+              </template>
+            </oj-bind-for-each>
+          </div>
+        </section>
+      </template>
+    </oj-bind-for-each>
+  </oj-bind-if>
+
+  <oj-bind-if test="[[!picker && valid]]">
+    <div class="mes-andon">
+      <span :class="[[andon.light]]"></span>
+      <div><div class="stn-id"><oj-bind-text value="[[andon.title]]"></oj-bind-text></div><div class="meta"><oj-bind-text value="[[andon.meta]]"></oj-bind-text></div></div>
+      <div class="right"><span class="qual"><oj-bind-text value="[[andon.qual]]"></oj-bind-text></span><a class="oj-link" style="color:#fff" href="#/station">All stations</a></div>
+    </div>
+
+    <div class="mes-grid mes-g-station">
+      <div class="mes-stack">
+        <section class="mes-card">
+          <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Dispatch queue</h2><span class="mes-hint"><oj-bind-text value="[[queueCount]]"></oj-bind-text></span></div>
+          <ul class="mes-queue">
+            <oj-bind-for-each data="[[queue]]">
+              <template data-oj-as="q">
+                <li><a :href="[[q.data.href]]" :class="[[q.data.cls]]"><span class="s"><oj-bind-text value="[[q.data.serial]]"></oj-bind-text></span>
+                  <span class="mes-row" style="gap:6px"><span data-bind="html: q.data.chip"></span><span class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[q.data.since]]"></oj-bind-text></span></span></a></li>
+              </template>
+            </oj-bind-for-each>
+          </ul>
+          <oj-bind-if test="[[queue.length === 0]]"><div class="mes-empty">No units queued at this station.</div></oj-bind-if>
+        </section>
+        <section class="mes-card">
+          <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Recently completed here</h2></div>
+          <ul class="mes-queue">
+            <oj-bind-for-each data="[[recent]]">
+              <template data-oj-as="q">
+                <li><a :href="[[q.data.href]]"><span class="s"><oj-bind-text value="[[q.data.serial]]"></oj-bind-text></span><span class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[q.data.text]]"></oj-bind-text></span></a></li>
+              </template>
+            </oj-bind-for-each>
+          </ul>
+          <oj-bind-if test="[[recent.length === 0]]"><div class="mes-empty">None yet.</div></oj-bind-if>
+        </section>
+      </div>
+
+      <section class="mes-card">
+        <oj-bind-if test="[[!hasUnit]]"><div class="mes-empty"><oj-bind-text value="[[emptyText]]"></oj-bind-text></div></oj-bind-if>
+        <oj-bind-if test="[[hasUnit]]">
+          <div class="mes-card-bd mes-stack">
+            <div class="mes-unit-hd">
+              <div>
+                <div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div>
+                <div class="serial"><oj-bind-text value="[[serial]]"></oj-bind-text></div>
+                <div class="oj-typography-body-xs oj-text-color-secondary"><oj-bind-text value="[[vinText]]"></oj-bind-text></div>
+              </div>
+              <div class="mes-acts">
+                <oj-bind-if test="[[showStart]]"><oj-button chroming="callToAction" on-oj-action="[[startOp]]"><oj-bind-text value="[[startLabel]]"></oj-bind-text></oj-button></oj-bind-if>
+                <oj-button chroming="outlined" on-oj-action="[[openLogDr]]">Log discrepancy</oj-button>
+                <a class="oj-link" :href="[[travelerHref]]" style="align-self:center">Traveler</a>
+              </div>
+            </div>
+            <div>
+              <div class="oj-typography-body-xs oj-text-color-secondary" style="margin-bottom:4px"><oj-bind-text value="[[opPos]]"></oj-bind-text></div>
+              <div class="mes-opbar">
+                <oj-bind-for-each data="[[opbar]]"><template data-oj-as="b"><div :class="[[b.data.cls]]" :title="[[b.data.title]]"><oj-bind-text value="[[b.data.label]]"></oj-bind-text></div></template></oj-bind-for-each>
+              </div>
+            </div>
+            <div :class="[[bannerCls]]"><span style="display:contents" data-bind="html: bannerHtml"></span>
+              <oj-bind-if test="[[showProgress]]"><oj-progress-bar value="[[progress]]" max="100" style="width:160px"></oj-progress-bar></oj-bind-if>
+            </div>
+            <div>
+              <div class="mes-sec-title" style="padding-left:0"><oj-bind-text value="[[instrTitle]]"></oj-bind-text></div>
+              <ol class="mes-instr"><oj-bind-for-each data="[[instr]]"><template data-oj-as="i"><li><oj-bind-text value="[[i.data]]"></oj-bind-text></li></template></oj-bind-for-each></ol>
+            </div>
+          </div>
+
+          <oj-bind-if test="[[hasLots]]">
+            <div class="mes-sec-title">Lot-controlled material · backflushed on completion</div>
+            <div style="padding:0 16px 8px">
+              <oj-table class="mes-table" aria-label="Lot material" data="[[lotsTable.dp]]" columns="[[lotsTable.columns]]">
+                <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template>
+              </oj-table>
+            </div>
+          </oj-bind-if>
+
+          <oj-bind-for-each data="[[sections]]">
+            <template data-oj-as="sec">
+              <div class="mes-sec-title"><oj-bind-text value="[[sec.data.title]]"></oj-bind-text><span class="cnt"><oj-bind-text value="[[sec.data.count]]"></oj-bind-text></span></div>
+              <oj-bind-for-each data="[[sec.data.rows]]">
+                <template data-oj-as="r">
+                  <div :class="[[r.data.cls]]">
+                    <div class="code"><span class="st" data-bind="html: r.data.stIcon"></span><oj-bind-text value="[[r.data.code]]"></oj-bind-text></div>
+                    <div>
+                      <div class="nm"><oj-bind-text value="[[r.data.name]]"></oj-bind-text> <span data-bind="html: r.data.sevHtml"></span></div>
+                      <div class="meta" data-bind="html: r.data.metaHtml"></div>
+                    </div>
+                    <div class="ctl">
+                      <span data-bind="html: r.data.resultHtml"></span>
+                      <oj-bind-if test="[[r.data.kind === 'serial']]">
+                        <oj-input-text :id="[['in-' + r.data.id]]" class="wide" value="{{r.data.input}}" placeholder="[[r.data.placeholder]]" label-hint="[[r.data.name]]" label-edge="none" disabled="[[r.data.disabled]]" data-enter="validate" :data-id="[[r.data.id]]"></oj-input-text>
+                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="validate" :data-id="[[r.data.id]]">Validate</oj-button>
+                      </oj-bind-if>
+                      <oj-bind-if test="[[r.data.kind === 'check']]">
+                        <oj-button chroming="solid" disabled="[[r.data.disabled]]" data-act="pass" :data-id="[[r.data.id]]">Pass</oj-button>
+                        <oj-button chroming="danger" disabled="[[r.data.disabled]]" data-act="fail" :data-id="[[r.data.id]]">Fail</oj-button>
+                      </oj-bind-if>
+                      <oj-bind-if test="[[r.data.kind === 'measure']]">
+                        <oj-input-text :id="[['in-' + r.data.id]]" value="{{r.data.input}}" raw-value="{{r.data.raw}}" messages-custom="[[r.data.msgs]]" placeholder="[[r.data.placeholder]]" label-hint="[[r.data.name]]" label-edge="none" disabled="[[r.data.disabled]]" data-enter="record" :data-id="[[r.data.id]]" class="mes-num"></oj-input-text>
+                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="record" :data-id="[[r.data.id]]">Record</oj-button>
+                      </oj-bind-if>
+                      <oj-bind-if test="[[r.data.kind === 'sign']]">
+                        <oj-button chroming="callToAction" disabled="[[r.data.disabled]]" data-act="sign" :data-id="[[r.data.id]]"><oj-bind-text value="[[r.data.signLabel]]"></oj-bind-text></oj-button>
+                      </oj-bind-if>
+                    </div>
+                  </div>
+                </template>
+              </oj-bind-for-each>
+            </template>
+          </oj-bind-for-each>
+
+          <oj-bind-if test="[[showComplete]]">
+            <div class="mes-sec-title">Complete operation</div>
+            <div class="mes-stack" style="padding:0 16px 16px;gap:10px">
+              <div :class="[[completeReady ? 'oj-text-color-success oj-typography-body-sm' : 'oj-text-color-secondary oj-typography-body-sm']]"><oj-bind-text value="[[completeText]]"></oj-bind-text></div>
+              <div><oj-button chroming="callToAction" disabled="[[!completeReady]]" on-oj-action="[[completeOp]]"><oj-bind-text value="[[completeLabel]]"></oj-bind-text></oj-button></div>
+            </div>
+          </oj-bind-if>
+
+          <oj-dialog id="failDialog" dialog-title="Record checklist failure" cancel-behavior="icon" class="mes-dialog">
+            <div slot="body"><div class="mes-dialog-body">
+              <strong><oj-bind-text value="[[failTitle]]"></oj-bind-text></strong>
+              <div class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[failInfo]]"></oj-bind-text></div>
+              <oj-text-area value="{{failNote}}" label-hint="What did you find?" rows="3" required class="oj-form-control-full-width"></oj-text-area>
+            </div></div>
+            <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeFail]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[submitFail]]">Record FAIL</oj-button></div>
+          </oj-dialog>
+
+          <oj-dialog id="logDrDialog" dialog-title="Log discrepancy" cancel-behavior="icon" class="mes-dialog wide">
+            <div slot="body">
+              <oj-form-layout max-columns="2" direction="row">
+                <oj-select-single label-hint="Severity" data="[[sevDP]]" value="{{dr.sev}}"></oj-select-single>
+                <oj-select-single label-hint="Category" data="[[catDP]]" value="{{dr.cat}}"></oj-select-single>
+                <oj-select-single label-hint="Operation" data="[[opDP]]" value="{{dr.seq}}"></oj-select-single>
+                <oj-select-single label-hint="Plan item (optional)" data="[[charDP]]" value="{{dr.charId}}"></oj-select-single>
+                <oj-input-text label-hint="Title" value="{{dr.title}}" required colspan="2" placeholder="e.g. Scratch on RH door outer panel"></oj-input-text>
+                <oj-text-area label-hint="Description" value="{{dr.desc}}" rows="3" colspan="2"></oj-text-area>
+              </oj-form-layout>
+              <div class="oj-typography-body-sm oj-text-color-secondary">Major and Critical discrepancies place the unit on quality hold immediately.</div>
+            </div>
+            <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeLogDr]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[submitLogDr]]">Open discrepancy</oj-button></div>
+          </oj-dialog>
+        </oj-bind-if>
+      </section>
+    </div>
+  </oj-bind-if>
+
+  <oj-bind-if test="[[!picker && !valid]]"><h1 class="oj-typography-heading-lg">Station not found</h1></oj-bind-if>
+</div>

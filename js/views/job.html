@@ -1,0 +1,17 @@
+<div class="mes-view">
+  <oj-bind-if test="[[!found]]"><h1 class="oj-typography-heading-lg">Job not found</h1></oj-bind-if>
+  <oj-bind-if test="[[found]]">
+    <div class="mes-crumbs"><a class="oj-link" href="#/jobs">Jobs</a> / <oj-bind-text value="[[title]]"></oj-bind-text></div>
+    <div class="mes-ph"><div><div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div><h1 class="oj-typography-heading-lg"><oj-bind-text value="[[title]]"></oj-bind-text></h1><div class="mes-sub"><oj-bind-text value="[[sub]]"></oj-bind-text></div></div>
+      <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[launch]]">Launch next unit</oj-button></div></div>
+    <div class="mes-grid mes-g-main">
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Routing &amp; WIP by operation</h2><span class="mes-hint"><oj-bind-text value="[[routingHint]]"></oj-bind-text></span></div>
+        <div class="mes-card-bd flush"><oj-table class="mes-table tall" aria-label="Routing" data="[[routing.dp]]" columns="[[routing.columns]]" on-oj-row-action="[[rowAction]]">
+          <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+      <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Job details</h2></div><div class="mes-card-bd" data-bind="html: detailsHtml"></div></section>
+    </div>
+    <section class="mes-card"><div class="mes-card-hd"><h2 class="oj-typography-heading-xs"><oj-bind-text value="[[unitsTitle]]"></oj-bind-text></h2></div>
+      <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Units" data="[[units.dp]]" columns="[[units.columns]]" on-oj-row-action="[[rowAction]]">
+        <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div></section>
+  </oj-bind-if>
+</div>

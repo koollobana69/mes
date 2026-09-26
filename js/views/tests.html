@@ -1,0 +1,9 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Quality</div><h1 class="oj-typography-heading-lg">Test Records</h1>
+    <div class="mes-sub">Created automatically when a test operation completes, from the readings captured against the quality plan.</div></div></div>
+  <div class="mes-kpis" :style="[[kpiCols]]"><oj-bind-for-each data="[[kpis]]"><template data-oj-as="k"><div class="mes-kpi"><span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span><span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span><span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span></div></template></oj-bind-for-each></div>
+  <section class="mes-card">
+    <div class="mes-card-bd"><oj-select-single label-hint="Test type" data="[[typeDP]]" value="{{type}}" style="max-width:320px"></oj-select-single></div>
+    <div class="mes-card-bd flush"><oj-table class="mes-table" aria-label="Test records" data="[[t().dp]]" columns="[[t().columns]]" on-oj-row-action="[[rowAction]]"><template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template></oj-table></div>
+  </section>
+</div>

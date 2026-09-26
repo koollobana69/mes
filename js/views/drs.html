@@ -1,0 +1,41 @@
+<div class="mes-view">
+  <div class="mes-ph"><div><div class="mes-eyebrow">Quality</div><h1 class="oj-typography-heading-lg">Discrepancies</h1>
+    <div class="mes-sub">Nonconformances from inspection, test, serial validation, receiving and supplier notices. Each one runs through MRB disposition, rework and verification with e-signatures.</div></div>
+    <div class="mes-acts"><oj-button chroming="callToAction" on-oj-action="[[openNew]]">New discrepancy</oj-button></div></div>
+  <div class="mes-kpis" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    <oj-bind-for-each data="[[kpis]]"><template data-oj-as="k">
+      <div :class="[['mes-kpi' + (k.data.alert ? ' alert' : '')]]"><span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span><span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span><span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span></div>
+    </template></oj-bind-for-each>
+  </div>
+  <section class="mes-card">
+    <div class="mes-card-bd mes-row" style="align-items:flex-end">
+      <oj-select-single label-hint="Status" data="[[statusDP]]" value="{{status}}" style="max-width:220px"></oj-select-single>
+      <oj-select-single label-hint="Severity" data="[[sevDP]]" value="{{sev}}" style="max-width:200px"></oj-select-single>
+      <oj-select-single label-hint="Source" data="[[srcDP]]" value="{{src}}" style="max-width:240px"></oj-select-single>
+      <oj-input-text label-hint="Search" value="{{q}}" placeholder="DR, serial, lot, text" clear-icon="conditional" style="max-width:280px"></oj-input-text>
+      <span class="oj-typography-body-sm oj-text-color-secondary"><oj-bind-text value="[[countText]]"></oj-bind-text></span>
+    </div>
+    <div class="mes-card-bd flush">
+      <oj-table class="mes-table" aria-label="Discrepancies" data="[[t().dp]]" columns="[[t().columns]]" on-oj-row-action="[[rowAction]]">
+        <template slot="rowTemplate" data-oj-as="row"><tr data-bind="foreach: row.data.cells"><td data-bind="html: $data"></td></tr></template>
+        <template slot="noData"><div class="mes-empty">No discrepancies match these filters.</div></template>
+      </oj-table>
+    </div>
+  </section>
+  <oj-dialog id="newDrDialog" dialog-title="New discrepancy" cancel-behavior="icon" class="mes-dialog wide">
+    <div slot="body">
+      <oj-form-layout max-columns="2" direction="row">
+        <oj-select-single label-hint="Applies to" data="[[targetDP]]" value="{{nd.target}}"></oj-select-single>
+        <oj-input-text label-hint="Serial / VIN / lot" value="{{nd.ref}}" required placeholder="e.g. BT1-… or TT4… or L260902-118"></oj-input-text>
+        <oj-select-single label-hint="Severity" data="[[sev3DP]]" value="{{nd.sev}}"></oj-select-single>
+        <oj-select-single label-hint="Category" data="[[catDP]]" value="{{nd.cat}}"></oj-select-single>
+        <oj-select-single label-hint="Source" data="[[nsrcDP]]" value="{{nd.src}}"></oj-select-single>
+        <oj-input-text label-hint="Title" value="{{nd.title}}" required></oj-input-text>
+        <oj-text-area label-hint="Description" value="{{nd.desc}}" rows="3" colspan="2"></oj-text-area>
+      </oj-form-layout>
+      <div class="oj-typography-body-sm oj-text-color-secondary">Major and Critical place the unit, serial or lot on quality hold.</div>
+      <oj-bind-if test="[[nd.error()]]"><div class="mes-inline-error" role="alert"><oj-bind-text value="[[nd.error]]"></oj-bind-text></div></oj-bind-if>
+    </div>
+    <div slot="footer"><oj-button chroming="outlined" on-oj-action="[[closeNew]]">Cancel</oj-button><oj-button chroming="danger" on-oj-action="[[createNew]]">Open discrepancy</oj-button></div>
+  </oj-dialog>
+</div>
