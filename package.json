@@ -1,0 +1,12 @@
+{
+  "name": "ridgeline-mes",
+  "version": "1.0.0",
+  "description": "Interactive MES + QMS prototype for a vehicle plant (Body, Engine, Final Assembly) with quality plans, discrepancies, holds, tests and as-built genealogy.",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "build": "node tools/build-single.js",
+    "test": "node tools/smoke-test.js"
+  },
+  "license": "UNLICENSED"
+}
