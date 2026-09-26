@@ -1,5 +1,5 @@
 /* Ridgeline MES — shared presentation helpers for JET views (Redwood badges, icons, formatting). */
-define(['ojs/ojarraydataprovider'], function (ArrayDataProvider) {
+define(['knockout', 'ojs/ojarraydataprovider'], function (ko, ArrayDataProvider) {
   'use strict';
 
   const ICONS = {
@@ -44,6 +44,8 @@ define(['ojs/ojarraydataprovider'], function (ArrayDataProvider) {
       const k = STATUS[status];
       return '<span class="oj-badge oj-badge-subtle' + (k ? ' oj-badge-' + k : '') + '">' + E(label || status) + '</span>';
     },
+    dt(ts) { return '<span class="mes-nowrap">' + U.fmtDT(ts) + '</span>'; },
+    nw(html) { return '<span class="mes-nowrap">' + html + '</span>'; },
     sev(s) { return '<span class="mes-sev mes-sev-' + E(s) + '">' + E(s) + '</span>'; },
     link(path, html, cls) { return '<a class="' + (cls || 'oj-link') + '" href="#/' + E(path) + '">' + html + '</a>'; },
     serial(s) {
@@ -71,10 +73,12 @@ define(['ojs/ojarraydataprovider'], function (ArrayDataProvider) {
     },
     /** An oj-button usable inside HTML strings (not knockout-bound). */
     btn(label, act, attrs, chroming) {
-      return '<oj-button data-oj-binding-provider="none" chroming="' + (chroming || 'outlined') + '" data-act="' + act + '"' + Object.entries(attrs || {}).map(([k, v]) => ' data-' + k + '="' + E(v) + '"').join('') + '>' + E(label) + '</oj-button>';
+      return '<oj-button data-oj-binding-provider="none" class="oj-button-sm" chroming="' + (chroming || 'outlined') + '" data-act="' + act + '"' + Object.entries(attrs || {}).map(([k, v]) => ' data-' + k + '="' + E(v) + '"').join('') + '>' + E(label) + '</oj-button>';
     },
     kv(pairs) { return '<dl class="mes-kv">' + pairs.filter(Boolean).map(p => '<dt>' + p[0] + '</dt><dd>' + p[1] + '</dd>').join('') + '</dl>'; },
     adp(arr, key) { return new ArrayDataProvider(arr, { keyAttributes: key || 'id' }); },
+    /** Bind a select to an "All" option ('*') while the view model keeps '' meaning "no filter". */
+    allSel(obs) { return ko.pureComputed({ read: () => obs() || '*', write: v => obs(!v || v === '*' ? '' : v) }); },
     optionsDP(list) { return new ArrayDataProvider(list.map(x => typeof x === 'object' ? x : { value: x, label: x }), { keyAttributes: 'value' }); },
     avatarColor(role) {
       return { 'Operator': 'blue', 'Material Handler': 'orange', 'Quality Technician': 'green', 'Quality Engineer': 'teal', 'Supervisor': 'purple' }[role] || 'neutral';

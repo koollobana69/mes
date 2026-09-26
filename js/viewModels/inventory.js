@@ -10,10 +10,10 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       const held = recs.filter(i => MES.invHeld(i) || i.status === 'Hold').length;
       return { id: loc.id, cls: 'mes-stn' + (held ? ' held' : ''), op: loc.id + ' · ' + loc.type, name: loc.name, q: recs.length + ' records' + (held ? ' · ' + held + ' held' : '') };
     });
-    this.locDP = ui.optionsDP([{ value: '', label: 'All locations' }].concat(DB.locations.map(x => ({ value: x.id, label: x.id + ' · ' + x.name }))));
-    this.partDP = ui.optionsDP([{ value: '', label: 'All parts' }].concat(DB.parts.map(p => ({ value: p.id, label: p.id + ' · ' + p.name }))));
+    this.locDP = ui.optionsDP([{ value: '*', label: 'All locations' }].concat(DB.locations.map(x => ({ value: x.id, label: x.id + ' · ' + x.name }))));
+    this.partDP = ui.optionsDP([{ value: '*', label: 'All parts' }].concat(DB.parts.map(p => ({ value: p.id, label: p.id + ' · ' + p.name }))));
     this.statusDP = ui.optionsDP([{ value: 'live', label: 'On hand (available + held)' }, { value: 'all', label: 'Everything' }, 'Available', 'Hold', 'Consumed', 'Scrap', 'RTV']);
-    this.loc = ko.observable(st.loc); this.part = ko.observable(st.part); this.status = ko.observable(st.status); this.q = ko.observable(st.q);
+    this.loc = ko.observable(st.loc); this.locSel = ui.allSel(this.loc); this.part = ko.observable(st.part); this.partSel = ui.allSel(this.part); this.status = ko.observable(st.status); this.q = ko.observable(st.q);
     this.t = ko.pureComputed(() => {
       Object.assign(st, { loc: this.loc(), part: this.part(), status: this.status(), q: this.q() });
       let l = DB.inv.filter(i => i.qty > 1e-9 || i.serial);

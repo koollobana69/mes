@@ -48,6 +48,8 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       title: st.id + ' · ' + st.name,
       meta: MES.building(st.building).name + ' · ' + st.wc + ' · OP' + op.seq + ' of ' + routing.length + ' operations · ' + itemId + ' · std ' + op.stdMin + ' min',
       light: 'light ' + (units.some(x => MES.unitHeld(x.serial)) ? 'hold' : running ? 'run' : 'idle'),
+      stateCls: 'state ' + (units.some(x => MES.unitHeld(x.serial)) ? 'hold' : running ? 'run' : 'idle'),
+      state: units.some(x => MES.unitHeld(x.serial)) ? 'HOLD' : running ? 'RUNNING' : 'IDLE',
       qual: qualified ? '✓ ' + cu.name + ' qualified' : '✕ ' + cu.name + ' not qualified here',
     };
     const prevOp = routing[routing.indexOf(op) - 1];
@@ -172,11 +174,11 @@ define(['knockout', 'services/ui'], function (ko, ui) {
 
     /* dialogs */
     this.failNote = ko.observable(''); this.failTitle = ko.observable(''); this.failInfo = ko.observable('');
-    this.dr = { sev: ko.observable('Minor'), cat: ko.observable('Workmanship'), seq: ko.observable(op.seq), charId: ko.observable(''), title: ko.observable(''), desc: ko.observable('') };
+    this.dr = { sev: ko.observable('Minor'), cat: ko.observable('Workmanship'), seq: ko.observable(op.seq), charId: ko.observable('none'), title: ko.observable(''), desc: ko.observable('') };
     this.sevDP = ui.optionsDP(['Minor', 'Major', 'Critical']);
     this.catDP = ui.optionsDP(['Workmanship', 'Cosmetic', 'Dimensional', 'Torque', 'Leak', 'Electrical', 'Wrong Part', 'Missing Part', 'Damage', 'Supplier', 'Documentation']);
     this.opDP = ui.optionsDP(routing.map(x => ({ value: x.seq, label: 'OP' + x.seq + ' ' + x.name })));
-    this.charDP = ui.optionsDP([{ value: '', label: '— none —' }].concat(chars.filter(c => c.type !== 'signoff').map(c => ({ value: c.id, label: c.code + ' ' + c.name }))));
+    this.charDP = ui.optionsDP([{ value: 'none', label: '— none —' }].concat(chars.filter(c => c.type !== 'signoff').map(c => ({ value: c.id, label: c.code + ' ' + c.name }))));
     let failCtx = null;
 
     const serial = u.serial, seq = op.seq;
@@ -188,11 +190,11 @@ define(['knockout', 'services/ui'], function (ko, ui) {
       app.toast(r.final ? serial + ' released — routing complete.' : 'OP' + seq + ' complete. ' + serial + ' moved to OP' + MES.currentOp(u).seq + '.');
       if (location.hash === '#/station/' + stId) app.refresh(); else app.go('station/' + stId);
     };
-    this.openLogDr = () => { this.dr.title(''); this.dr.desc(''); this.dr.sev('Minor'); this.dr.charId(''); document.getElementById('logDrDialog').open(); };
+    this.openLogDr = () => { this.dr.title(''); this.dr.desc(''); this.dr.sev('Minor'); this.dr.charId('none'); document.getElementById('logDrDialog').open(); };
     this.closeLogDr = () => document.getElementById('logDrDialog').close();
     this.submitLogDr = () => {
       if (!String(this.dr.title() || '').trim()) return app.toast('Enter a short title for the discrepancy.', 'bad');
-      const r = MES.createDR({ by: DB.currentUser, serial, itemId: u.itemId, seq: Number(this.dr.seq()), charId: this.dr.charId() || null, source: 'Manual', severity: this.dr.sev(), category: this.dr.cat(), title: this.dr.title(), description: this.dr.desc() });
+      const r = MES.createDR({ by: DB.currentUser, serial, itemId: u.itemId, seq: Number(this.dr.seq()), charId: this.dr.charId() && this.dr.charId() !== 'none' ? this.dr.charId() : null, source: 'Manual', severity: this.dr.sev(), category: this.dr.cat(), title: this.dr.title(), description: this.dr.desc() });
       document.getElementById('logDrDialog').close();
       app.commit(r, r.ok ? r.dr.id + ' opened' + (r.dr.holdId ? ' · unit on hold' : '') : '', 'warn');
     };

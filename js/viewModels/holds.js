@@ -9,11 +9,11 @@ define(['knockout', 'services/ui'], function (ko, ui) {
     const cols = [
       { h: 'Hold', v: h => '<b class="mes-mono">' + E(h.id) + '</b>' }, { h: 'Type', v: h => '<span class="mes-tag">' + E(h.type) + '</span>' }, { h: 'Target', v: tgt },
       { h: 'Reason', v: h => E(h.reason) }, { h: 'Discrepancy', v: h => ui.drLink(h.drId) + (h.drId && MES.dr(h.drId) ? ' ' + ui.badge(MES.dr(h.drId).status) : '') },
-      { h: 'Placed', v: h => U.fmtDT(h.at) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(h.placedBy)) + '</div>' },
+      { h: 'Placed', v: h => ui.dt(h.at) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(h.placedBy)) + '</div>' },
     ];
     this.activeTitle = 'Active holds (' + act.length + ')';
     this.active = ui.table(cols.concat([{ h: '', v: h => ui.btn('Release', 'release', { id: h.id }) }]), act, { empty: 'No active holds.' });
-    this.released = ui.table(cols.concat([{ h: 'Released', v: h => U.fmtDT(h.releasedAt) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(h.releasedBy)) + ' · ' + E(h.note || '') + '</div>' }, { h: 'Held for', v: h => U.dur(h.releasedAt - h.at) }]), rel);
+    this.released = ui.table(cols.concat([{ h: 'Released', v: h => ui.dt(h.releasedAt) + '<div class="oj-typography-body-xs oj-text-color-secondary">' + E(MES.userName(h.releasedBy)) + ' · ' + E(h.note || '') + '</div>' }, { h: 'Held for', v: h => U.dur(h.releasedAt - h.at) }]), rel);
     const n = this.nh = { type: ko.observable('Unit'), target: ko.observable(''), reason: ko.observable(''), error: ko.observable('') };
     this.typeDP = ui.optionsDP(['Unit', 'Serial', 'Lot']);
     this.openNew = () => {

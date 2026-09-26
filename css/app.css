@@ -1,82 +1,124 @@
-/* Ridgeline MES — app-specific layout on top of the Oracle JET Redwood theme.
-   Colors come from Redwood's --oj-core-* tokens so the app follows the theme. */
+/* Ridgeline MES — app layer on top of Oracle JET Redwood.
+   Everything is expressed through Redwood's --oj-core-* / component tokens, plus a small set of
+   --mes-* tokens for the brand bar, canvas and accents. */
 :root {
   --mes-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-  --mes-line: var(--oj-core-divider-color);
+  --mes-line: rgb(231, 228, 224);
+  --mes-line-strong: rgb(214, 210, 205);
   --mes-muted: var(--oj-core-text-color-secondary);
   --mes-panel: var(--oj-core-bg-color-content);
+  --mes-canvas: rgb(245, 244, 242);
+  --mes-brand-bar: rgb(32, 30, 28);
+  --mes-brand-ink: rgb(245, 244, 242);
+  --mes-brand-muted: rgb(169, 162, 155);
+  --mes-accent: rgb(34, 126, 158);            /* Redwood ocean */
+  --mes-accent-soft: rgba(34, 126, 158, .10);
+  --mes-radius: 12px;
+  --mes-shadow: 0 1px 2px rgba(22, 21, 19, .04), 0 1px 1px rgba(22, 21, 19, .03);
+  --mes-shadow-hover: 0 4px 14px rgba(22, 21, 19, .08);
   --mes-series-1: #2a78d6; --mes-series-2: #eb6834; --mes-series-3: #1baf7a;
+  --oj-avatar-pattern-display: none;
 }
 html, body { height: 100%; }
-body { background: rgb(var(--oj-palette-neutral-rgb-10, 245, 244, 242)); }
+body { background: var(--mes-canvas); }
 .mes-page { min-height: 100%; display: flex; flex-direction: column; }
 .mes-mono { font-family: var(--mes-mono); font-size: .92em; letter-spacing: -.01em; }
 .mes-num { font-variant-numeric: tabular-nums; }
+.mes-nowrap { white-space: nowrap; }
 .mes-ico { width: 18px; height: 18px; flex: none; vertical-align: -3px; }
 
-/* ---------- header ---------- */
-.mes-header { position: sticky; top: 0; z-index: 20; }
-.mes-header-bar { gap: 12px; padding: 6px 12px; flex-wrap: wrap; }
-.mes-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+/* ---------- brand bar (header) ---------- */
+.mes-header.oj-web-applayout-header { position: sticky; top: 0; z-index: 20; background: var(--mes-brand-bar); color: var(--mes-brand-ink); border-bottom: 0; box-shadow: 0 1px 0 rgba(0,0,0,.25);
+  --oj-text-field-bg-color: rgba(255, 255, 255, .08); --oj-text-field-border-color: rgba(255, 255, 255, .16); --oj-text-field-border-color-focus: var(--mes-accent);
+  --oj-text-field-text-color: var(--mes-brand-ink); --oj-text-field-placeholder-color: var(--mes-brand-muted); --oj-text-field-height: 2.25rem;
+  --oj-button-borderless-chrome-text-color: var(--mes-brand-ink); --oj-button-borderless-chrome-bg-color-hover: rgba(255,255,255,.1); --oj-core-text-color-primary: var(--mes-brand-ink); }
+.mes-header .oj-web-applayout-max-width { max-width: none; }
+.mes-header-bar { gap: 16px; padding: 8px 16px; flex-wrap: nowrap; min-height: 56px; box-sizing: border-box; }
+.mes-header-btn .oj-fwk-icon, .mes-header .oj-fwk-icon { color: var(--mes-brand-ink); }
+.mes-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; white-space: nowrap; }
 .mes-brand:hover { text-decoration: none; }
-.mes-logo { width: 32px; height: 32px; border-radius: 6px; display: grid; place-items: center; background: #312d2a; color: #fff; font: 700 10.5px/1 var(--oj-typography-font-family, sans-serif); letter-spacing: .03em; }
-.mes-brand-title { font-size: 1.125rem; display: block; line-height: 1.2; }
-.mes-brand-sub { display: block; font-size: .75rem; color: var(--mes-muted); }
-.mes-search { flex: 1 1 260px; max-width: 460px; }
+.mes-logo { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(140deg, rgb(47, 146, 180), rgb(22, 94, 120)); color: #fff; font: 800 10.5px/1 var(--oj-typography-font-family, sans-serif); letter-spacing: .04em; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
+.mes-brand-title.oj-web-applayout-header-title { font-size: 1.0625rem; font-weight: 700; display: block; line-height: 1.15; color: var(--mes-brand-ink); padding: 0; margin: 0; }
+.mes-brand-sub { display: block; font-size: .75rem; color: var(--mes-brand-muted); }
+.mes-search { flex: 1 1 320px; max-width: 520px; margin-inline: auto; }
 .mes-search-input { width: 100%; }
-.mes-search-ico { margin-inline-start: 8px; }
-.mes-userbox { gap: 10px; }
-.mes-user-select { width: 260px; }
-.mes-clock { font-family: var(--mes-mono); font-size: .8125rem; color: var(--mes-muted); white-space: nowrap; }
+.mes-search-ico { margin-inline-start: 10px; color: var(--mes-brand-muted); }
+.mes-userbox { gap: 10px; flex-wrap: nowrap; }
+.mes-user-select { width: 250px; }
+.mes-clock { font-family: var(--mes-mono); font-size: .75rem; color: var(--mes-brand-muted); white-space: nowrap; padding: 4px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; }
 
-/* ---------- drawer / nav ---------- */
+/* ---------- drawer / navigation ---------- */
 .mes-drawer-layout { flex: 1; min-height: 0; }
-.mes-drawer { width: 248px; padding: 8px 8px 16px; display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; background: var(--mes-panel); border-inline-end: 1px solid var(--mes-line); }
-.mes-nav-group { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--mes-muted); padding: 14px 12px 4px; }
-.mes-nav-ico { display: inline-flex; align-items: center; }
+.mes-drawer { width: 236px; padding: 10px 10px 16px; display: flex; flex-direction: column; min-height: 100%; box-sizing: border-box; background: var(--mes-panel); border-inline-end: 1px solid var(--mes-line); }
+.mes-nav { --oj-navigation-list-item-min-height: 2.25rem; --oj-navigation-list-font-size: .875rem; --oj-navigation-list-font-weight: 500; --oj-navigation-list-icon-size: 1.125rem;
+  --oj-navigation-list-icon-to-text-padding: .625rem; --oj-navigation-list-item-padding: 0 .625rem; --oj-navigation-list-item-margin: 0;
+  --oj-navigation-list-item-bg-color-selected: var(--mes-accent-soft); --oj-navigation-list-item-border-color-selected: var(--mes-accent);
+  --oj-navigation-list-item-label-color-selected: var(--oj-core-text-color-primary); }
+.mes-nav .oj-navigationlist-item-element { border-radius: 8px; margin-block: 1px; }
+.mes-nav .oj-navigationlist-item-element.oj-selected .oj-navigationlist-item-label { font-weight: 700; }
+.mes-nav-group { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--mes-muted); padding: 16px 10px 4px; }
+.mes-nav-group:first-child { padding-top: 6px; }
+.mes-nav-ico { display: inline-flex; align-items: center; color: var(--mes-muted); }
+.mes-nav .oj-selected .mes-nav-ico { color: var(--mes-accent); }
 .mes-nav-badge { margin-inline-start: auto; }
 .mes-nav .oj-navigationlist-item-content { display: flex; align-items: center; gap: 4px; }
-.mes-drawer-foot { margin-top: auto; padding: 16px 12px 0; border-top: 1px solid var(--mes-line); }
-.mes-content { min-width: 0; padding: 20px 24px 60px; box-sizing: border-box; }
-.mes-view { display: flex; flex-direction: column; gap: 16px; max-width: 1500px; }
+.mes-drawer-foot { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid var(--mes-line); }
+.mes-content { min-width: 0; padding: 24px 28px 64px; box-sizing: border-box; }
+.mes-view { display: flex; flex-direction: column; gap: 20px; max-width: 1600px; margin-inline: auto; }
 
 /* ---------- page header ---------- */
-.mes-ph { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
-.mes-eyebrow { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--mes-muted); margin-bottom: 2px; }
-.mes-ph h1 { margin: 0; }
-.mes-ph .mes-sub { color: var(--mes-muted); margin-top: 4px; max-width: 80ch; }
-.mes-ph .mes-acts { margin-inline-start: auto; display: flex; gap: 8px; flex-wrap: wrap; }
-.mes-crumbs { font-size: .8125rem; color: var(--mes-muted); }
+.mes-ph { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 4px; }
+.mes-eyebrow { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--mes-accent); margin-bottom: 4px; }
+.mes-ph h1 { margin: 0; font-size: 1.75rem; line-height: 1.2; letter-spacing: -.01em; }
+.mes-ph .mes-sub { color: var(--mes-muted); margin-top: 6px; max-width: 90ch; font-size: .9375rem; }
+.mes-ph .mes-acts { margin-inline-start: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mes-crumbs { font-size: .8125rem; color: var(--mes-muted); margin-bottom: -8px; }
+.mes-crumbs a { font-weight: 600; }
 
 /* ---------- panels ---------- */
-.mes-card { background: var(--mes-panel); border: 1px solid var(--mes-line); border-radius: var(--oj-core-border-radius-lg); min-width: 0; }
-.mes-card-hd { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--mes-line); flex-wrap: wrap; }
-.mes-card-hd h2, .mes-card-hd h3 { margin: 0; }
+.mes-card { background: var(--mes-panel); border: 1px solid var(--mes-line); border-radius: var(--mes-radius); min-width: 0; box-shadow: var(--mes-shadow); overflow: hidden; }
+.mes-card-hd { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--mes-line); flex-wrap: wrap; min-height: 28px; }
+.mes-card-hd h2, .mes-card-hd h3 { margin: 0; font-size: 1rem; font-weight: 700; }
 .mes-card-hd .mes-hint { color: var(--mes-muted); font-size: .8125rem; }
-.mes-card-hd .mes-acts { margin-inline-start: auto; display: flex; gap: 6px; flex-wrap: wrap; }
-.mes-card-bd { padding: 14px 16px; }
+.mes-card-hd .mes-acts { margin-inline-start: auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.mes-card-bd { padding: 16px 18px; }
 .mes-card-bd.flush { padding: 0; }
-.mes-grid { display: grid; gap: 16px; }
+.mes-toolbar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 14px 18px; border-bottom: 1px solid var(--mes-line); background: rgb(251, 249, 248); }
+.mes-toolbar .mes-count { margin-inline-start: auto; color: var(--mes-muted); font-size: .8125rem; align-self: center; }
+.mes-grid { display: grid; gap: 20px; }
 .mes-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .mes-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .mes-g-main { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .mes-g-station { grid-template-columns: 300px minmax(0, 1fr); align-items: start; }
-.mes-stack { display: flex; flex-direction: column; gap: 16px; }
+.mes-stack { display: flex; flex-direction: column; gap: 20px; }
 .mes-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.mes-empty { padding: 24px 16px; text-align: center; color: var(--mes-muted); }
-.mes-table { width: 100%; }
-.mes-table.tall { max-height: 640px; }
-oj-table.mes-table td, oj-table.mes-table .oj-table-data-cell { vertical-align: top; white-space: normal; overflow-wrap: anywhere; }
+.mes-empty { padding: 28px 16px; text-align: center; color: var(--mes-muted); }
+
+/* ---------- tables (dense Redwood) ---------- */
+.mes-table { width: 100%;
+  --oj-collection-list-row-height: 2.75rem; --oj-collection-list-cell-padding-vertical: .625rem;
+  --oj-collection-header-font-size: .75rem; --oj-collection-header-font-weight: 700; --oj-collection-header-text-color: var(--oj-core-text-color-secondary);
+  --oj-collection-header-bg-color: rgb(251, 249, 248); }
+.mes-table.tall { max-height: 680px; }
+oj-table.mes-table .oj-table-column-header-text { text-transform: uppercase; letter-spacing: .05em; }
+oj-table.mes-table td, oj-table.mes-table .oj-table-data-cell { vertical-align: top; white-space: normal; overflow-wrap: anywhere; font-size: .875rem; }
 oj-table.mes-table .oj-table-data-cell .mes-mono, oj-table.mes-table .oj-table-data-cell .oj-badge, oj-table.mes-table .oj-table-data-cell .mes-sev, oj-table.mes-table .oj-table-data-cell .mes-tag, oj-table.mes-table .oj-table-data-cell .mes-type { white-space: nowrap; overflow-wrap: normal; }
+oj-table.mes-table .oj-table-body-row:hover .oj-table-data-cell { background: rgb(251, 249, 248); }
+.mes-card-bd.flush > oj-table.mes-table { border: 0; }
 
 /* ---------- KPI tiles ---------- */
-.mes-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
-.mes-kpi { background: var(--mes-panel); border: 1px solid var(--mes-line); border-radius: var(--oj-core-border-radius-lg); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mes-kpi .lbl { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--mes-muted); }
-.mes-kpi .val { font-size: 1.875rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
-.mes-kpi .val small { font-size: 1rem; color: var(--mes-muted); font-weight: 600; }
+.mes-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.mes-kpi { background: var(--mes-panel); border: 1px solid var(--mes-line); border-radius: var(--mes-radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; box-shadow: var(--mes-shadow); position: relative; }
+.mes-kpi .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.mes-kpi .lbl { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--mes-muted); line-height: 1.3; }
+.mes-kpi .kpi-ic { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--mes-accent-soft); color: var(--mes-accent); }
+.mes-kpi .kpi-ic .mes-ico { width: 16px; height: 16px; vertical-align: 0; }
+.mes-kpi .val { font-size: 1.875rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .mes-kpi .foot { font-size: .8125rem; color: var(--mes-muted); }
-.mes-kpi.alert { border-color: var(--oj-core-danger-3); }
+.mes-kpi.tone-ok .kpi-ic { background: var(--oj-core-success-secondary-1, #e7f3ea); color: var(--oj-core-text-color-success); }
+.mes-kpi.tone-warn .kpi-ic { background: var(--oj-core-warning-secondary-1, #fbf1dc); color: var(--oj-core-text-color-warning); }
+.mes-kpi.tone-bad .kpi-ic, .mes-kpi.alert .kpi-ic { background: var(--oj-core-danger-secondary-1, #fbe9e7); color: var(--oj-core-text-color-danger); }
+.mes-kpi.alert { box-shadow: inset 3px 0 0 var(--oj-core-danger-3, #c74634), var(--mes-shadow); }
 .mes-kpi.alert .val { color: var(--oj-core-text-color-danger); }
 
 /* ---------- severity & types ---------- */
@@ -102,16 +144,20 @@ oj-table.mes-table .oj-table-data-cell .mes-mono, oj-table.mes-table .oj-table-d
 .mes-line-hd .right { margin-inline-start: auto; color: var(--mes-muted); font-size: .8125rem; }
 .mes-stations { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 6px; }
 .mes-zone-label { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--mes-muted); margin-top: 4px; }
-.mes-stn { border: 1px solid var(--mes-line); border-radius: var(--oj-core-border-radius-md); padding: 8px 9px; background: var(--mes-panel); display: flex; flex-direction: column; gap: 3px; min-height: 84px; color: inherit; text-decoration: none; }
-.mes-stn:hover { border-color: var(--oj-core-text-color-brand); text-decoration: none; }
+.mes-stn { border: 1px solid var(--mes-line); border-radius: 10px; padding: 9px 10px 8px 12px; background: var(--mes-panel); display: flex; flex-direction: column; gap: 3px; min-height: 86px; color: inherit; text-decoration: none; box-shadow: inset 3px 0 0 var(--mes-line-strong); transition: box-shadow .15s, transform .15s; }
+.mes-stn:hover { border-color: var(--mes-line-strong); text-decoration: none; box-shadow: inset 3px 0 0 var(--mes-line-strong), var(--mes-shadow-hover); transform: translateY(-1px); }
+@media (prefers-reduced-motion: reduce) { .mes-stn, .mes-stn:hover { transition: none; transform: none; } }
 .mes-stn .op { font-size: .6875rem; font-weight: 700; color: var(--mes-muted); letter-spacing: .04em; }
 .mes-stn .nm { font-weight: 700; font-size: .8125rem; line-height: 1.2; }
 .mes-stn .u { font-family: var(--mes-mono); font-size: .75rem; color: var(--mes-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mes-stn .q { margin-top: auto; font-size: .75rem; color: var(--mes-muted); }
-.mes-stn.active { background: var(--oj-core-info-secondary-1, #eef3fb); border-color: var(--oj-core-info-3, #8db1e0); }
-.mes-stn.held { background: var(--oj-core-danger-secondary-1, #fbe9e7); border-color: var(--oj-core-danger-3, #e3a29a); }
+.mes-stn.active { background: rgb(240, 246, 252); box-shadow: inset 3px 0 0 var(--oj-core-info-3, #2a6fc4); }
+.mes-stn.active:hover { box-shadow: inset 3px 0 0 var(--oj-core-info-3, #2a6fc4), var(--mes-shadow-hover); }
+.mes-stn.held { background: rgb(253, 242, 240); box-shadow: inset 3px 0 0 var(--oj-core-danger-3, #c74634); }
+.mes-stn.held:hover { box-shadow: inset 3px 0 0 var(--oj-core-danger-3, #c74634), var(--mes-shadow-hover); }
+.mes-stn .who { font-size: .75rem; color: var(--oj-core-text-color-primary); font-weight: 600; }
 .mes-stn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-.mes-progress { height: 8px; background: var(--oj-core-neutral-secondary-2, #e5e2de); border-radius: 4px; overflow: hidden; display: flex; }
+.mes-progress { height: 6px; background: var(--oj-core-neutral-secondary-2, #e5e2de); border-radius: 4px; overflow: hidden; display: flex; }
 .mes-progress span { display: block; height: 100%; }
 .mes-progress .done { background: var(--oj-core-success-3, #508223); }
 .mes-progress .wip { background: var(--oj-core-info-3, #2a6fc4); }
@@ -240,3 +286,44 @@ oj-table.mes-table .oj-table-data-cell .mes-mono, oj-table.mes-table .oj-table-d
 .mes-qm th.rot span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--mes-mono); font-size: .75rem; font-weight: 600; }
 .mes-qm .y { color: var(--oj-core-text-color-success); font-size: 1rem; } .mes-qm .n { color: var(--mes-muted); }
 oj-collapsible.mes-op { border-bottom: 1px solid var(--mes-line); }
+.mes-card > .mes-toolbar:last-child { border-bottom: 0; }
+
+/* ---------- refinements ---------- */
+.mes-card-hd .oj-typography-heading-xs, .mes-card-hd .oj-typography-subheading-xs { font-size: 1rem; line-height: 1.4; font-weight: 700; }
+.mes-align-start { align-items: start; }
+.mes-loc-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.mes-loc-grid .mes-stn { min-height: 0; }
+.mes-loc-grid .mes-stn .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mes-unit-top { background: rgb(251, 249, 248); border-bottom: 1px solid var(--mes-line); }
+.mes-unit-hd > div:first-child { flex: 1 1 320px; min-width: 0; }
+.mes-unit-hd .mes-acts { flex: none; align-items: center; }
+.mes-andon { background: linear-gradient(120deg, rgb(32, 30, 28), rgb(58, 54, 50)); box-shadow: var(--mes-shadow); }
+.mes-andon .state { font-size: .6875rem; font-weight: 800; letter-spacing: .12em; padding: 3px 8px; border-radius: 999px; }
+.mes-andon .state.run { background: rgba(95, 191, 127, .18); color: #8fe0aa; }
+.mes-andon .state.idle { background: rgba(255, 255, 255, .1); color: #d4cfca; }
+.mes-andon .state.hold { background: rgba(231, 106, 92, .2); color: #ffb3a8; }
+.mes-andon a.oj-link { color: #fff; font-weight: 600; }
+.mes-queue .s { letter-spacing: -.01em; }
+.mes-sec-title { border-top: 1px solid var(--mes-line); padding-top: 14px; }
+.mes-card > .mes-sec-title:first-child { border-top: 0; }
+.mes-ci { border-top: 1px solid rgb(241, 239, 236); }
+.mes-ci:hover { background: rgb(252, 251, 250); }
+.mes-legend { display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center; padding: 10px 14px; background: var(--mes-panel); border: 1px solid var(--mes-line); border-radius: var(--mes-radius); }
+/* Redwood typography classes use !important with variables — scope the variables instead */
+.mes-card-hd { --oj-typography-heading-xs-font-size: 1rem; --oj-typography-heading-xs-line-height: 1.4; --oj-typography-subheading-xs-font-size: 1rem; --oj-typography-subheading-xs-line-height: 1.4; }
+.mes-ph { --oj-typography-heading-lg-font-size: 1.75rem; --oj-typography-heading-lg-line-height: 1.2; }
+.mes-line-hd { --oj-typography-subheading-xs-font-size: 1rem; }
+.mes-sticky { position: sticky; top: 72px; align-self: start; }
+@media (max-width: 980px) { .mes-sticky { position: static; } }
+@media (max-width: 980px) {
+  .mes-header-bar { flex-wrap: wrap; row-gap: 8px; }
+  .mes-search { order: 3; flex: 1 1 100%; max-width: none; margin: 0; }
+  .mes-userbox { margin-inline-start: auto; }
+}
+@media (max-width: 640px) {
+  .mes-brand-sub { display: none; }
+  .mes-user-select { width: 150px; }
+  .mes-userbox oj-avatar { display: none; }
+  .mes-content { padding: 16px 16px 48px; }
+  .mes-ph h1 { font-size: 1.5rem; }
+}

@@ -11,8 +11,8 @@
   <div class="mes-kpis">
     <oj-bind-for-each data="[[kpis]]">
       <template data-oj-as="k">
-        <div :class="[['mes-kpi' + (k.data.alert ? ' alert' : '')]]">
-          <span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span>
+        <div :class="[['mes-kpi tone-' + (k.data.tone || 'info') + (k.data.alert ? ' alert' : '')]]">
+          <div class="kpi-top"><span class="lbl"><oj-bind-text value="[[k.data.lbl]]"></oj-bind-text></span><span class="kpi-ic" data-bind="html: k.data.icon || ''"></span></div>
           <span class="val"><oj-bind-text value="[[k.data.val]]"></oj-bind-text></span>
           <span class="foot"><oj-bind-text value="[[k.data.foot]]"></oj-bind-text></span>
         </div>
@@ -42,6 +42,7 @@
                         <span class="op"><oj-bind-text value="[[t.data.op]]"></oj-bind-text></span>
                         <span class="nm"><oj-bind-text value="[[t.data.name]]"></oj-bind-text></span>
                         <span class="u"><oj-bind-text value="[[t.data.unit]]"></oj-bind-text></span>
+                        <oj-bind-if test="[[t.data.who]]"><span class="who"><oj-bind-text value="[[t.data.who]]"></oj-bind-text></span></oj-bind-if>
                         <span class="q"><oj-bind-text value="[[t.data.queue]]"></oj-bind-text></span>
                       </a>
                     </template>

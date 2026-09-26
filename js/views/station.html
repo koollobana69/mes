@@ -31,11 +31,11 @@
     <div class="mes-andon">
       <span :class="[[andon.light]]"></span>
       <div><div class="stn-id"><oj-bind-text value="[[andon.title]]"></oj-bind-text></div><div class="meta"><oj-bind-text value="[[andon.meta]]"></oj-bind-text></div></div>
-      <div class="right"><span class="qual"><oj-bind-text value="[[andon.qual]]"></oj-bind-text></span><a class="oj-link" style="color:#fff" href="#/station">All stations</a></div>
+      <div class="right"><span :class="[[andon.stateCls]]"><oj-bind-text value="[[andon.state]]"></oj-bind-text></span><span class="qual"><oj-bind-text value="[[andon.qual]]"></oj-bind-text></span><a class="oj-link" style="color:#fff" href="#/station">All stations</a></div>
     </div>
 
     <div class="mes-grid mes-g-station">
-      <div class="mes-stack">
+      <div class="mes-stack mes-sticky">
         <section class="mes-card">
           <div class="mes-card-hd"><h2 class="oj-typography-heading-xs">Dispatch queue</h2><span class="mes-hint"><oj-bind-text value="[[queueCount]]"></oj-bind-text></span></div>
           <ul class="mes-queue">
@@ -64,7 +64,7 @@
       <section class="mes-card">
         <oj-bind-if test="[[!hasUnit]]"><div class="mes-empty"><oj-bind-text value="[[emptyText]]"></oj-bind-text></div></oj-bind-if>
         <oj-bind-if test="[[hasUnit]]">
-          <div class="mes-card-bd mes-stack">
+          <div class="mes-card-bd mes-stack mes-unit-top">
             <div class="mes-unit-hd">
               <div>
                 <div class="mes-eyebrow"><oj-bind-text value="[[eyebrow]]"></oj-bind-text></div>
